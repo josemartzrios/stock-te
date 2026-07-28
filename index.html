@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1f4f3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0c1211" />
+    <!-- Habilita modo standalone al instalar en pantalla de inicio de iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Almacen Te" />
+    <title>Almacen Te Helado</title>
+    <script>
+      // Pinta la paleta correcta antes del primer frame (evita el flashazo
+      // blanco al abrir la app instalada en modo oscuro).
+      (function () {
+        try {
+          var pref = localStorage.getItem('almacen-tema') || 'auto';
+          var oscuro =
+            pref === 'oscuro' ||
+            (pref === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.temaEfectivo = oscuro ? 'oscuro' : 'claro';
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
