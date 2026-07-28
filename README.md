@@ -116,6 +116,11 @@ o cambiar de teléfono.
   presentación de compra, precio vigente, umbral de alerta. **No es un evento.**
 - **Movimiento** (event log inmutable): `compra`, `produccion` o `ajuste`. Nunca
   se edita ni se borra.
+  - `compra` guarda las unidades que entraron y, como dato informativo, **cuántas
+    presentaciones y de qué tamaño**. Al registrarla puedes tocar *Hoy compré otro
+    tamaño* y capturar el empaque real (p. ej. 2 bolsas de 2 kg en promoción, en
+    vez de la de 900 g de siempre) junto con lo que pagaste. Es solo para esa
+    compra: el catálogo no se modifica.
   - `produccion` guarda un **snapshot** de cuánto descontó de cada insumo, con la
     receta vigente en ese momento. Si luego cambias la receta, el pasado **no** se
     recalcula.

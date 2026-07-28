@@ -102,6 +102,12 @@ export function HistorialScreen({ insumos, movimientos }: Props) {
                           <span className="tag-pos">
                             +{cantidad(r.mov.cantidad, unidad(r.mov.insumoId))}
                           </span>
+                          {r.mov.presentaciones !== undefined &&
+                            r.mov.presentacionCantidad !== undefined &&
+                            ` · ${r.mov.presentaciones} × ${cantidad(
+                              r.mov.presentacionCantidad,
+                              unidad(r.mov.insumoId),
+                            )}`}
                           {r.mov.costoTotal !== undefined && ` · ${money(r.mov.costoTotal)}`}
                         </div>
                       </>

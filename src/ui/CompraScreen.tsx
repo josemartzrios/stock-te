@@ -25,17 +25,51 @@ export function CompraScreen({ insumos, movimientos, insumoId, onGuardado, onCan
     () => activos.find((i) => i.id === insumoId) ?? null,
   );
   const [pres, setPres] = useState(1);
+  const [tam, setTam] = useState(''); // tamano por presentacion; vacio = el del catalogo
+  const [tamAbierto, setTamAbierto] = useState(false);
   const [costo, setCosto] = useState('');
   const [costoTocado, setCostoTocado] = useState(false);
   const [guardando, setGuardando] = useState(false);
 
-  const unidades = sel ? pres * sel.presentacionCantidad : 0;
-  const costoSugerido = sel ? pres * sel.presentacionPrecio : 0;
+  // Tamano de la presentacion: el del catalogo salvo que hoy se haya comprado
+  // otro empaque (promocion, bolsa mas grande, etc.).
+  const tamCatalogo = sel?.presentacionCantidad ?? 0;
+  const tamNum = Number(tam);
+  const tamValido = tam.trim() !== '' && Number.isFinite(tamNum) && tamNum > 0;
+  const tamUsado = tamAbierto ? (tamValido ? tamNum : 0) : tamCatalogo;
+  const otroTam = tamAbierto && tamValido && tamNum !== tamCatalogo;
+
+  const unidades = pres * tamUsado;
+  const precioBase = sel?.presentacionPrecio ?? 0;
+  // Si el empaque es otro, el precio del catalogo ya no aplica: se prorratea
+  // solo para dar una referencia, nunca para prellenar el costo real.
+  const costoReferencia = tamCatalogo > 0 ? (unidades / tamCatalogo) * precioBase : 0;
+  const costoSugerido = otroTam ? 0 : pres * precioBase;
   const costoMostrado = costoTocado ? costo : costoSugerido ? costoSugerido.toFixed(2) : '';
+
+  const costoNum = Number(costoMostrado);
+  const costoValido = costoMostrado !== '' && Number.isFinite(costoNum) && costoNum >= 0;
+  // Cuanto habria costado la presentacion de siempre a este precio: sirve para
+  // ver de un vistazo si la promocion realmente conviene.
+  const equivalente = costoValido && unidades > 0 ? (costoNum / unidades) * tamCatalogo : 0;
 
   function elegir(i: Insumo) {
     setSel(i);
     setPres(1);
+    setTam('');
+    setTamAbierto(false);
+    setCosto('');
+    setCostoTocado(false);
+  }
+
+  function alternarTam() {
+    if (tamAbierto) {
+      setTamAbierto(false);
+      setTam('');
+    } else {
+      setTamAbierto(true);
+      setTam(String(tamCatalogo));
+    }
     setCosto('');
     setCostoTocado(false);
   }
@@ -43,12 +77,14 @@ export function CompraScreen({ insumos, movimientos, insumoId, onGuardado, onCan
   async function guardar() {
     if (!sel) return;
     setGuardando(true);
-    const costoTotal = costoMostrado === '' ? undefined : Number(costoMostrado);
+    const costoTotal = costoValido ? costoNum : undefined;
     await agregarMovimiento({
       tipo: 'compra',
       insumoId: sel.id,
       cantidad: unidades,
-      ...(costoTotal !== undefined && !Number.isNaN(costoTotal) ? { costoTotal } : {}),
+      presentaciones: pres,
+      presentacionCantidad: tamUsado,
+      ...(costoTotal !== undefined ? { costoTotal } : {}),
     });
     onGuardado(`Compra de ${sel.nombre} registrada`);
   }
@@ -91,7 +127,7 @@ export function CompraScreen({ insumos, movimientos, insumoId, onGuardado, onCan
       onVolver={() => setSel(null)}
       volverLabel="Cambiar insumo"
       pie={
-        <button className="btn btn-primario" onClick={guardar} disabled={guardando || pres <= 0}>
+        <button className="btn btn-primario" onClick={guardar} disabled={guardando || unidades <= 0}>
           Guardar compra
         </button>
       }
@@ -118,9 +154,40 @@ export function CompraScreen({ insumos, movimientos, insumoId, onGuardado, onCan
           </button>
         </div>
         <p className="ayuda">
-          {pres} × {sel.presentacionNombre}
+          {pres} × {otroTam ? cantidad(tamUsado, sel.unidadBase) : sel.presentacionNombre}
         </p>
       </div>
+
+      {tamAbierto ? (
+        <div className="campo">
+          <label htmlFor="tam">¿Cuánto trae cada una?</label>
+          <div className="entrada con-sufijo">
+            <input
+              id="tam"
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              value={tam}
+              onChange={(e) => setTam(e.target.value)}
+            />
+            <span className="sufijo">{sel.unidadBase}</span>
+          </div>
+          <p className="ayuda">
+            Solo para esta compra; el catálogo no cambia. Lo de siempre es{' '}
+            {sel.presentacionNombre} ({cantidad(tamCatalogo, sel.unidadBase)}).{' '}
+            <button className="btn-texto" onClick={alternarTam}>
+              Volver a lo de siempre
+            </button>
+          </p>
+        </div>
+      ) : (
+        <p className="campo-nota">
+          <button className="btn-texto" onClick={alternarTam}>
+            Hoy compré otro tamaño
+          </button>
+        </p>
+      )}
 
       <div className="resumen">
         + {cantidad(unidades, sel.unidadBase)} · quedas con {lotesNuevos}{' '}
@@ -145,10 +212,18 @@ export function CompraScreen({ insumos, movimientos, insumoId, onGuardado, onCan
           />
         </div>
         <p className="ayuda">
-          {costoTocado
-            ? 'Opcional. Déjalo vacío si no quieres registrarlo.'
-            : `Prellenado con el precio vigente: ${pres} × ${money(sel.presentacionPrecio)}. Puedes corregirlo.`}
+          {otroTam
+            ? `Escribe lo que pagaste. Al precio de siempre esa cantidad costaría ${money(costoReferencia)}.`
+            : costoTocado
+              ? 'Opcional. Déjalo vacío si no quieres registrarlo.'
+              : `Prellenado con el precio vigente: ${pres} × ${money(sel.presentacionPrecio)}. Puedes corregirlo.`}
         </p>
+        {otroTam && costoValido && (
+          <p className="ayuda">
+            Sale a {money(equivalente)} por {sel.presentacionNombre}, contra{' '}
+            {money(sel.presentacionPrecio)} de siempre.
+          </p>
+        )}
       </div>
     </Screen>
   );

@@ -1098,6 +1098,24 @@ input:focus {
   margin-top: 10px;
 }
 
+/* Accion secundaria en linea, dentro de un texto de ayuda */
+.btn-texto {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.campo-nota {
+  margin: -10px 2px 20px;
+  font-size: 13px;
+  color: var(--tinta-3);
+}
+
 /* Barra de accion fija al pie del scroll */
 .barra-accion {
   position: sticky;

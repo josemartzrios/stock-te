@@ -18,7 +18,17 @@ export interface Insumo {
 
 // Event log -- INMUTABLE. Nunca update, nunca delete.
 export type Movimiento =
-  | { tipo: 'compra'; insumoId: string; cantidad: number; costoTotal?: number }
+  | {
+      tipo: 'compra';
+      insumoId: string;
+      cantidad: number; // total en unidadBase (lo unico que mueve el stock)
+      costoTotal?: number;
+      // Snapshot de COMO se compro: cuantas presentaciones y de que tamano.
+      // Puede no coincidir con el catalogo (promocion, otro empaque). Es
+      // informativo: el stock siempre sale de `cantidad`.
+      presentaciones?: number;
+      presentacionCantidad?: number; // unidadBase que trajo cada presentacion
+    }
   | { tipo: 'produccion'; lotes: number; descuentos: Record<string, number> }
   // descuentos = snapshot de {insumoId: cantidad descontada} calculado con la
   // receta VIGENTE al momento de guardar. La UI pide solo "cuantos lotes?";
