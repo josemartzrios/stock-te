@@ -1,72 +1,91 @@
 import { useMemo, useState } from 'react';
-import type { ConfigGlobal, Insumo } from '../domain';
-import { guardarCapacidadObjetivo, guardarInsumo } from '../db/db';
+import type { AlmacenRepositorio, Insumo, Producto } from '../domain';
 import { Screen } from './Screen';
+import { SelectorProducto } from './SelectorProducto';
+import { RecetaEditor, type BorradorProducto } from './RecetaEditor';
+import { InsumoEditor, type BorradorInsumo } from './InsumoEditor';
 import { IconAlerta } from './Icons';
+import { num } from './campos';
 
 interface Props {
+  repo: AlmacenRepositorio;
   insumos: Insumo[];
-  config: ConfigGlobal;
+  productos: Producto[];
   onGuardado: (msg: string) => void;
   onVolver: () => void;
 }
 
-type Campos = { consumoPorLote: string; presentacionPrecio: string; umbralLotes: string };
+const borradorProducto = (p: Producto): BorradorProducto => ({
+  receta: Object.fromEntries(Object.entries(p.receta).map(([id, q]) => [id, String(q)])),
+  objetivoLotes: String(p.objetivoLotes),
+});
 
-const inicial = (i: Insumo): Campos => ({
-  consumoPorLote: String(i.consumoPorLote),
+const borradorInsumo = (i: Insumo): BorradorInsumo => ({
+  presentacionNombre: i.presentacionNombre,
+  presentacionCantidad: String(i.presentacionCantidad),
   presentacionPrecio: String(i.presentacionPrecio),
   umbralLotes: String(i.umbralLotes),
 });
 
-/** Numero valido y no negativo; si no, se conserva el valor anterior. */
-function num(v: string, previo: number): number {
-  const n = Number(v);
-  return v.trim() !== '' && Number.isFinite(n) && n >= 0 ? n : previo;
+/** Aplica el borrador al producto. Cantidades en 0 o vacias = el insumo no lleva. */
+function aplicarProducto(p: Producto, b: BorradorProducto, activos: Insumo[]): Producto {
+  const receta = { ...p.receta };
+  for (const i of activos) {
+    const q = num(b.receta[i.id] ?? '', 0);
+    if (q > 0) receta[i.id] = q;
+    else delete receta[i.id];
+  }
+  return { ...p, receta, objetivoLotes: Math.max(1, num(b.objetivoLotes, p.objetivoLotes)) };
 }
 
-export function ConfigScreen({ insumos, config, onGuardado, onVolver }: Props) {
-  const [ed, setEd] = useState<Record<string, Campos>>(() =>
-    Object.fromEntries(insumos.map((i) => [i.id, inicial(i)])),
+function aplicarInsumo(i: Insumo, b: BorradorInsumo): Insumo {
+  return {
+    ...i,
+    presentacionNombre: b.presentacionNombre.trim() || i.presentacionNombre,
+    presentacionCantidad: num(b.presentacionCantidad, i.presentacionCantidad) || i.presentacionCantidad,
+    presentacionPrecio: num(b.presentacionPrecio, i.presentacionPrecio),
+    umbralLotes: num(b.umbralLotes, i.umbralLotes),
+  };
+}
+
+const distinto = (a: unknown, b: unknown) => JSON.stringify(a) !== JSON.stringify(b);
+
+export function ConfigScreen({ repo, insumos, productos, onGuardado, onVolver }: Props) {
+  const activos = useMemo(() => insumos.filter((i) => i.activo), [insumos]);
+  const [productoId, setProductoId] = useState(productos[0]?.id ?? '');
+  const [bProductos, setBProductos] = useState(() =>
+    Object.fromEntries(productos.map((p) => [p.id, borradorProducto(p)])),
   );
-  const [capacidad, setCapacidad] = useState(String(config.capacidadObjetivo));
+  const [bInsumos, setBInsumos] = useState(() =>
+    Object.fromEntries(insumos.map((i) => [i.id, borradorInsumo(i)])),
+  );
   const [guardando, setGuardando] = useState(false);
 
-  const cambios = useMemo(() => {
-    if (num(capacidad, config.capacidadObjetivo) !== config.capacidadObjetivo) return true;
-    return insumos.some((i) => {
-      const c = ed[i.id];
-      return (
-        num(c.consumoPorLote, i.consumoPorLote) !== i.consumoPorLote ||
-        num(c.presentacionPrecio, i.presentacionPrecio) !== i.presentacionPrecio ||
-        num(c.umbralLotes, i.umbralLotes) !== i.umbralLotes
-      );
-    });
-  }, [ed, capacidad, insumos, config.capacidadObjetivo]);
+  const productosNuevos = useMemo(
+    () => productos.map((p) => aplicarProducto(p, bProductos[p.id], activos)),
+    [productos, bProductos, activos],
+  );
+  const insumosNuevos = useMemo(
+    () => insumos.map((i) => aplicarInsumo(i, bInsumos[i.id])),
+    [insumos, bInsumos],
+  );
+  const productosCambiados = productosNuevos.filter((p, k) => distinto(p, productos[k]));
+  const insumosCambiados = insumosNuevos.filter((i, k) => distinto(i, insumos[k]));
+  const cambios = productosCambiados.length + insumosCambiados.length > 0;
 
-  function editar(id: string, campo: keyof Campos, valor: string) {
-    setEd((prev) => ({ ...prev, [id]: { ...prev[id], [campo]: valor } }));
-  }
+  const seleccionado = productos.find((p) => p.id === productoId) ?? productos[0];
 
   async function guardar() {
     setGuardando(true);
-    for (const i of insumos) {
-      const c = ed[i.id];
-      await guardarInsumo({
-        ...i,
-        consumoPorLote: num(c.consumoPorLote, i.consumoPorLote),
-        presentacionPrecio: num(c.presentacionPrecio, i.presentacionPrecio),
-        umbralLotes: num(c.umbralLotes, i.umbralLotes),
-      });
-    }
-    await guardarCapacidadObjetivo(Math.max(1, num(capacidad, config.capacidadObjetivo)));
+    for (const p of productosCambiados) await repo.guardarProducto(p);
+    for (const i of insumosCambiados) await repo.guardarInsumo(i);
     onGuardado('Configuración guardada');
   }
 
   return (
     <Screen
       titulo="Configuración"
-      descripcion="Receta, precios vigentes y cuándo avisarte."
+      descripcion="Recetas, precios vigentes y cuándo avisarte."
       onVolver={onVolver}
       pie={
         <button className="btn btn-primario" onClick={guardar} disabled={guardando || !cambios}>
@@ -74,24 +93,6 @@ export function ConfigScreen({ insumos, config, onGuardado, onVolver }: Props) {
         </button>
       }
     >
-      <div className="tarjeta">
-        <h3>Objetivo de compra</h3>
-        <div className="config-fila">
-          <label htmlFor="cap">Lotes que quieres poder producir después de surtirte</label>
-          <div className="entrada con-sufijo">
-            <input
-              id="cap"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              value={capacidad}
-              onChange={(e) => setCapacidad(e.target.value)}
-            />
-            <span className="sufijo">lotes</span>
-          </div>
-        </div>
-      </div>
-
       <div className="aviso">
         <IconAlerta size={18} />
         <span>
@@ -99,57 +100,40 @@ export function ConfigScreen({ insumos, config, onGuardado, onVolver }: Props) {
         </span>
       </div>
 
+      {seleccionado && (
+        <>
+          <SelectorProducto productos={productos} valor={seleccionado.id} onCambiar={setProductoId} />
+          <RecetaEditor
+            insumos={activos}
+            borrador={bProductos[seleccionado.id]}
+            onReceta={(insumoId, valor) =>
+              setBProductos((prev) => ({
+                ...prev,
+                [seleccionado.id]: {
+                  ...prev[seleccionado.id],
+                  receta: { ...prev[seleccionado.id].receta, [insumoId]: valor },
+                },
+              }))
+            }
+            onObjetivo={(valor) =>
+              setBProductos((prev) => ({
+                ...prev,
+                [seleccionado.id]: { ...prev[seleccionado.id], objetivoLotes: valor },
+              }))
+            }
+          />
+        </>
+      )}
+
       {insumos.map((i) => (
-        <div key={i.id} className="tarjeta">
-          <h3>{i.nombre}</h3>
-
-          <div className="config-fila">
-            <label htmlFor={`receta-${i.id}`}>Receta: cuánto lleva un lote</label>
-            <div className="entrada con-sufijo">
-              <input
-                id={`receta-${i.id}`}
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.1"
-                value={ed[i.id].consumoPorLote}
-                onChange={(e) => editar(i.id, 'consumoPorLote', e.target.value)}
-              />
-              <span className="sufijo">{i.unidadBase}</span>
-            </div>
-          </div>
-
-          <div className="config-fila">
-            <label htmlFor={`precio-${i.id}`}>Precio vigente por {i.presentacionNombre}</label>
-            <div className="entrada con-prefijo">
-              <span className="prefijo">$</span>
-              <input
-                id={`precio-${i.id}`}
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.01"
-                value={ed[i.id].presentacionPrecio}
-                onChange={(e) => editar(i.id, 'presentacionPrecio', e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="config-fila">
-            <label htmlFor={`umbral-${i.id}`}>Avisarme cuando baje de</label>
-            <div className="entrada con-sufijo">
-              <input
-                id={`umbral-${i.id}`}
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={ed[i.id].umbralLotes}
-                onChange={(e) => editar(i.id, 'umbralLotes', e.target.value)}
-              />
-              <span className="sufijo">lotes</span>
-            </div>
-          </div>
-        </div>
+        <InsumoEditor
+          key={i.id}
+          insumo={i}
+          borrador={bInsumos[i.id]}
+          onCambio={(campo, valor) =>
+            setBInsumos((prev) => ({ ...prev, [i.id]: { ...prev[i.id], [campo]: valor } }))
+          }
+        />
       ))}
     </Screen>
   );
