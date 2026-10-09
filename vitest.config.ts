@@ -1,9 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
-// Tests corren solo sobre la logica pura de src/domain (entorno node, sin DOM).
+// Tests corren solo sobre logica pura y repositorios (entorno node, sin DOM).
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/domain/**/*.test.ts'],
+    include: ['src/**/*.test.ts'],
   },
 });

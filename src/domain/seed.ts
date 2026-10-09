@@ -1,4 +1,4 @@
-import type { Insumo } from './types';
+import type { Insumo, Producto } from './types';
 
 /**
  * Catalogo inicial real del negocio. Se siembra en el primer arranque.
@@ -9,7 +9,6 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     id: 'te',
     nombre: 'Te oolong',
     unidadBase: 'g',
-    consumoPorLote: 150,
     presentacionNombre: 'bolsa 1 kg',
     presentacionCantidad: 1000,
     presentacionPrecio: 154.0,
@@ -20,7 +19,6 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     id: 'azucar',
     nombre: 'Azucar morena',
     unidadBase: 'g',
-    consumoPorLote: 800,
     presentacionNombre: 'bolsa 900 g',
     presentacionCantidad: 900,
     presentacionPrecio: 22.5,
@@ -28,10 +26,19 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     activo: true,
   },
   {
+    id: 'stevia',
+    nombre: 'Stevia liquida',
+    unidadBase: 'ml',
+    presentacionNombre: 'frasco 65 ml',
+    presentacionCantidad: 65,
+    presentacionPrecio: 58.0,
+    umbralLotes: 2,
+    activo: true,
+  },
+  {
     id: 'limon',
     nombre: 'Limon deshidratado',
     unidadBase: 'g',
-    consumoPorLote: 22,
     presentacionNombre: 'bolsa 1 kg',
     presentacionCantidad: 1000,
     presentacionPrecio: 237.0,
@@ -42,7 +49,6 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     id: 'pet',
     nombre: 'Botella PET 500ml',
     unidadBase: 'pza',
-    consumoPorLote: 18,
     presentacionNombre: 'paquete 100 pzas',
     presentacionCantidad: 100,
     presentacionPrecio: 176.32,
@@ -53,7 +59,6 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     id: 'tapa',
     nombre: 'Tapa',
     unidadBase: 'pza',
-    consumoPorLote: 18,
     presentacionNombre: 'paquete 100 pzas',
     presentacionCantidad: 100,
     presentacionPrecio: 41.76,
@@ -64,7 +69,6 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     id: 'agua',
     nombre: 'Agua garrafon',
     unidadBase: 'L',
-    consumoPorLote: 9.5,
     presentacionNombre: 'garrafon 20 L',
     presentacionCantidad: 20,
     presentacionPrecio: 17.0,
@@ -73,4 +77,20 @@ export const CATALOGO_SEMILLA: Insumo[] = [
   },
 ];
 
-export const CONFIG_SEMILLA = { capacidadObjetivo: 6 };
+/** Recetas por lote. Editables en Configuracion (aun no estan estandarizadas). */
+export const PRODUCTOS_SEMILLA: Producto[] = [
+  {
+    id: 'morena',
+    nombre: 'Te con azucar morena',
+    receta: { te: 150, azucar: 800, limon: 22, pet: 18, tapa: 18, agua: 9.5 },
+    objetivoLotes: 3,
+    activo: true,
+  },
+  {
+    id: 'stevia',
+    nombre: 'Te con stevia',
+    receta: { te: 150, stevia: 30, limon: 22, pet: 18, tapa: 18, agua: 10 },
+    objetivoLotes: 3,
+    activo: true,
+  },
+];
