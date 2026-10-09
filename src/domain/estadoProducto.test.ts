@@ -4,6 +4,7 @@ import {
   calcularEstadoInsumos,
   calcularEstadoProductos,
   colorSemaforo,
+  lotesParaStock,
   lotesRestantes,
 } from './estadoProducto';
 
@@ -105,5 +106,24 @@ describe('calcularEstadoInsumos', () => {
     expect(e.stevia.lotes).toBeNull();
     expect(e.stevia.necesitaCompra).toBe(false);
     expect(e.stevia.color).toBe('verde');
+  });
+});
+
+describe('lotesParaStock', () => {
+  it('agua con 190 L => 19 (peor caso: stevia a 10 L)', () => {
+    expect(lotesParaStock('agua', PRODUCTOS_SEMILLA, 190)).toBe(19);
+  });
+
+  it('azucar solo la usa morena', () => {
+    expect(lotesParaStock('azucar', PRODUCTOS_SEMILLA, 1792)).toBe(2);
+  });
+
+  it('insumo que ningun producto activo usa => null', () => {
+    expect(lotesParaStock('stevia', [PRODUCTOS_SEMILLA[0]], 100)).toBeNull();
+    expect(lotesParaStock('stevia', [{ ...PRODUCTOS_SEMILLA[1], activo: false }], 100)).toBeNull();
+  });
+
+  it('stock negativo => 0', () => {
+    expect(lotesParaStock('te', PRODUCTOS_SEMILLA, -10)).toBe(0);
   });
 });

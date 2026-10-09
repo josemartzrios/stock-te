@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { AlmacenRepositorio, Insumo, MovimientoRegistro, Producto } from '../domain';
-import { calcularStocks, lotesRestantes } from '../domain';
+import { calcularStocks, lotesParaStock } from '../domain';
 import { Screen } from './Screen';
 import { cantidad, money, plural } from './format';
 import { IconCaja, IconChevron, IconMas, IconMenos } from './Icons';
@@ -119,7 +119,7 @@ export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, 
   }
 
   const stockNuevo = (stocks[sel.id] ?? 0) + unidades;
-  const { lotes: lotesNuevos } = lotesRestantes(stockNuevo, sel.consumoPorLote);
+  const lotesNuevos = lotesParaStock(sel.id, productos, stockNuevo);
 
   return (
     <Screen
@@ -191,8 +191,13 @@ export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, 
       )}
 
       <div className="resumen">
-        + {cantidad(unidades, sel.unidadBase)} · quedas con {lotesNuevos}{' '}
-        {plural(lotesNuevos, 'lote', 'lotes')}
+        + {cantidad(unidades, sel.unidadBase)}
+        {lotesNuevos !== null && (
+          <>
+            {' '}
+            · quedas con {lotesNuevos} {plural(lotesNuevos, 'lote', 'lotes')}
+          </>
+        )}
       </div>
 
       <div className="campo">

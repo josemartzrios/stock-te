@@ -68,22 +68,30 @@ export function calcularEstadoProductos(
   return productos.filter((p) => p.activo).map((p) => estadoProducto(insumos, p, stocks));
 }
 
+/**
+ * Lotes que alcanza `stock` de un insumo: el peor caso entre los productos
+ * activos que lo usan. `null` si ninguno lo usa.
+ */
+export function lotesParaStock(insumoId: string, productos: Producto[], stock: number): number | null {
+  const usos = productos
+    .filter((p) => p.activo)
+    .map((p) => p.receta[insumoId])
+    .filter((porLote): porLote is number => porLote !== undefined && porLote > 0);
+  return usos.length ? Math.min(...usos.map((u) => lotesRestantes(stock, u).lotes)) : null;
+}
+
 /** Un estado por insumo activo; `lotes` es el peor caso entre los productos que lo usan. */
 export function calcularEstadoInsumos(
   insumos: Insumo[],
   productos: Producto[],
   stocks: Stocks,
 ): EstadoInsumo[] {
-  const activos = productos.filter((p) => p.activo);
   return insumos
     .filter((i) => i.activo)
     .map((insumo) => {
       const stock = stocks[insumo.id] ?? 0;
       const negativo = stock < 0;
-      const usos = activos
-        .map((p) => p.receta[insumo.id])
-        .filter((porLote): porLote is number => porLote !== undefined && porLote > 0);
-      const lotes = usos.length ? Math.min(...usos.map((u) => lotesRestantes(stock, u).lotes)) : null;
+      const lotes = lotesParaStock(insumo.id, productos, stock);
       const color: Color =
         lotes === null ? (negativo ? 'rojo' : 'verde') : colorSemaforo(lotes, negativo, insumo.umbralLotes);
       return { insumo, stock, lotes, negativo, color, necesitaCompra: lotes !== null && lotes <= insumo.umbralLotes };

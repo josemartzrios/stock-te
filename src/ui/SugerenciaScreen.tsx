@@ -10,16 +10,15 @@ interface Props {
 }
 
 export function SugerenciaScreen({ sugerencia, onCancelar, onIrACompra }: Props) {
-  const { lineas, costoTotal, capacidadObjetivo } = sugerencia;
+  const { lineas, costoTotal, objetivos } = sugerencia;
+  const meta = objetivos
+    .map((o) => `${o.lotes} ${plural(o.lotes, 'lote', 'lotes')} de ${o.nombre}`)
+    .join(' y ');
 
   return (
     <Screen
       titulo="Qué comprar"
-      descripcion={`Cantidades para volver a tener ${capacidadObjetivo} ${plural(
-        capacidadObjetivo,
-        'lote',
-        'lotes',
-      )} de todo.`}
+      descripcion={meta ? `Cantidades para volver a tener ${meta}.` : undefined}
       onVolver={onCancelar}
     >
       {lineas.length === 0 ? (

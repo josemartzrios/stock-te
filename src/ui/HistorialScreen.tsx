@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
-import type { Insumo, MovimientoRegistro } from '../domain';
-import { ordenarLog } from '../domain';
+import type { Insumo, MovimientoRegistro, Producto } from '../domain';
+import { ordenarLog, productoIdDeProduccion } from '../domain';
 import { Screen } from './Screen';
 import { cantidad, claveDia, etiquetaDia, hora, money, plural } from './format';
 import { IconBotella, IconCarrito, IconConteo, IconHistorial } from './Icons';
 
 interface Props {
   insumos: Insumo[];
+  productos: Producto[];
   movimientos: MovimientoRegistro[];
 }
 
@@ -25,10 +26,11 @@ const ICONO = {
   ajuste: IconConteo,
 } as const;
 
-export function HistorialScreen({ insumos, movimientos }: Props) {
+export function HistorialScreen({ insumos, productos, movimientos }: Props) {
   const [filtro, setFiltro] = useState<Filtro>('todo');
 
   const nombre = (id: string) => insumos.find((i) => i.id === id)?.nombre ?? id;
+  const producto = (id: string) => productos.find((p) => p.id === id)?.nombre ?? id;
   const unidad = (id: string) => insumos.find((i) => i.id === id)?.unidadBase ?? '';
 
   // Cronologico inverso y agrupado por dia, para poder leerlo como una bitacora.
@@ -117,7 +119,8 @@ export function HistorialScreen({ insumos, movimientos }: Props) {
                       <>
                         <div className="que">
                           <span>
-                            Producción · {r.mov.lotes} {plural(r.mov.lotes, 'lote', 'lotes')}
+                            Producción · {r.mov.lotes} {plural(r.mov.lotes, 'lote', 'lotes')} ·{' '}
+                            {producto(productoIdDeProduccion(r.mov))}
                           </span>
                           <span className="hora">{hora(r.timestamp)}</span>
                         </div>
