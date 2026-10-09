@@ -23,3 +23,15 @@ describe('inicializarAlmacen', () => {
     expect(d.insumos[0].presentacionPrecio).toBe(999);
   });
 });
+
+describe('inicializarAlmacen: no destruye el historial', () => {
+  it('con movimientos pero sin insumos siembra el catalogo y conserva el log', async () => {
+    const movimiento = { id: 'x', timestamp: '2026-01-01T00:00:00.000Z', mov: { tipo: 'compra' as const, insumoId: 'te', cantidad: 500 } };
+    const repo = crearRepositorioMemoria({ insumos: [], productos: [], movimientos: [movimiento] });
+    await inicializarAlmacen(repo);
+    const d = await repo.leerTodo();
+    expect(d.movimientos).toEqual([movimiento]);
+    expect(d.insumos).toHaveLength(7);
+    expect(d.productos).toHaveLength(2);
+  });
+});

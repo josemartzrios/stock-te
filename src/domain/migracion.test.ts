@@ -28,6 +28,12 @@ describe('migrarInsumosV1', () => {
     expect(productos[1].receta.te).toBe(160);
   });
 
+  it('descarta consumos 0 de v1 (no son parte de la receta)', () => {
+    const { productos } = migrarInsumosV1(insumosV1({ limon: 0 }));
+    expect('limon' in productos[0].receta).toBe(false);
+    expect('limon' in productos[1].receta).toBe(false);
+  });
+
   it('quita consumoPorLote de los insumos y agrega stevia (7 en total)', () => {
     const { insumos } = migrarInsumosV1(insumosV1());
     expect(insumos).toHaveLength(7);

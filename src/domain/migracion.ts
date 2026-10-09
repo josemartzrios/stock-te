@@ -13,7 +13,7 @@ const AGUA_STEVIA_L_POR_LOTE = 10;
 export function migrarInsumosV1(v1: InsumoV1[]): { insumos: Insumo[]; productos: Producto[] } {
   const morenaReceta: Record<string, number> = {};
   const insumos: Insumo[] = v1.map(({ consumoPorLote, ...insumo }) => {
-    morenaReceta[insumo.id] = consumoPorLote;
+    if (consumoPorLote > 0) morenaReceta[insumo.id] = consumoPorLote;
     return insumo;
   });
 

@@ -33,7 +33,7 @@ const TABS: Tab[] = ['inicio', 'historial', 'ajustes'];
 const esTab = (v: Vista): v is { t: Tab } => TABS.includes(v.t as Tab);
 
 export function App() {
-  const { datos, cargando, recargar } = useDatos(repo);
+  const { datos, cargando, error, recargar } = useDatos(repo);
   const [vista, setVista] = useState<Vista>({ t: 'inicio' });
   const [toast, setToast] = useState<string | null>(null);
   const [tema, setTema] = useTema();
@@ -65,6 +65,7 @@ export function App() {
     setVista(destino);
   }
 
+  if (error) return <ErrorDeCarga detalle={error.message} />;
   if (cargando || !datos || !derivado) return <Esqueleto />;
 
   const conTabs = esTab(vista);
@@ -179,6 +180,24 @@ export function App() {
         </div>
       )}
     </>
+  );
+}
+
+function ErrorDeCarga({ detalle }: { detalle: string }) {
+  return (
+    <div className="app">
+      <div className="vacio" role="alert">
+        <b>No se pudo abrir el inventario</b>
+        <p>
+          Tus datos siguen guardados en este teléfono. No borres ni reinstales la app: cierra
+          y vuelve a abrirla, y si sigue igual avísame.
+        </p>
+        <p className="ayuda">{detalle}</p>
+        <button className="btn btn-primario" onClick={() => window.location.reload()}>
+          Reintentar
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -26,6 +26,11 @@ describe('calcularDescuentos', () => {
     expect(d.azucar).toBeUndefined();
   });
 
+  it('ignora cantidades 0 o negativas en la receta', () => {
+    const d = calcularDescuentos({ ...morena, receta: { te: 150, agua: 0, limon: -1 } }, CATALOGO_SEMILLA, 2);
+    expect(d).toEqual({ te: 300 });
+  });
+
   it('ignora insumos inactivos o inexistentes en el catalogo', () => {
     const insumos = CATALOGO_SEMILLA.map((i) => (i.id === 'limon' ? { ...i, activo: false } : i));
     const d = calcularDescuentos({ ...morena, receta: { ...morena.receta, fantasma: 5 } }, insumos, 1);

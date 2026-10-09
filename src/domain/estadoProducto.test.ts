@@ -66,6 +66,14 @@ describe('calcularEstadoProductos', () => {
     expect(e.cuelloBotella).toBeNull();
   });
 
+  it('una cantidad 0 en la receta no limita aunque el insumo este en negativo', () => {
+    const p = { ...PRODUCTOS_SEMILLA[0], receta: { te: 150, agua: 0 } };
+    const [e] = calcularEstadoProductos(CATALOGO_SEMILLA, [p], { te: 1500, agua: -1 });
+    expect(e.lotes).toBe(10);
+    expect(e.cuelloBotella?.id).toBe('te');
+    expect(e.lineas.map((l) => l.insumo.id)).toEqual(['te']);
+  });
+
   it('producto sin receta => 0 lotes', () => {
     const [e] = calcularEstadoProductos(CATALOGO_SEMILLA, [{ ...PRODUCTOS_SEMILLA[0], receta: {} }], B);
     expect(e.lotes).toBe(0);

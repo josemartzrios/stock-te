@@ -35,7 +35,7 @@ function peorColor(colores: Color[]): Color {
 
 function estadoProducto(insumos: Insumo[], producto: Producto, stocks: Stocks): EstadoProducto {
   const lineas: EstadoInsumoProducto[] = insumos
-    .filter((i) => i.activo && i.id in producto.receta)
+    .filter((i) => i.activo && producto.receta[i.id] > 0)
     .map((insumo) => {
       const stock = stocks[insumo.id] ?? 0;
       const { lotes, negativo } = lotesRestantes(stock, producto.receta[insumo.id]);

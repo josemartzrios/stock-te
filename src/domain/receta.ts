@@ -22,7 +22,7 @@ export function calcularDescuentos(
   const activos = new Set(insumos.filter((i) => i.activo).map((i) => i.id));
   const descuentos: Record<string, number> = {};
   for (const [insumoId, porLote] of Object.entries(producto.receta)) {
-    if (activos.has(insumoId)) descuentos[insumoId] = porLote * lotes;
+    if (porLote > 0 && activos.has(insumoId)) descuentos[insumoId] = porLote * lotes;
   }
   return descuentos;
 }
