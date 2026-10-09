@@ -44,8 +44,8 @@ primer día haces un **conteo físico** de cada insumo:
 1. Toca **Conté → Contar todo**.
 2. Captura cuánto hay de cada uno. El sistema lo registra como un ajuste.
 
-A partir de ahí, cada día registras con un tap: **Produje**, **Compré** o
-**Conté**.
+A partir de ahí, cada día registras con un tap: **Produje** (en la tarjeta del
+producto que hiciste), **Compré** o **Conté**.
 
 ---
 
@@ -112,8 +112,14 @@ o cambiar de teléfono.
 
 ## Cómo funciona (modelo de datos)
 
-- **Insumo** (catálogo): configuración editable — receta (consumo por lote),
-  presentación de compra, precio vigente, umbral de alerta. **No es un evento.**
+- **Insumo** (catálogo): configuración editable — presentación de compra (nombre
+  y tamaño), precio vigente, umbral de alerta. **No es un evento.**
+- **Producto**: lo que se fabrica. Cada uno tiene su **receta** (cuánto insumo
+  consume un lote) y su **objetivo de lotes** para sugerir compras. Hoy hay dos:
+  té con azúcar morena y té con stevia. Los insumos son compartidos (té, limón,
+  botellas, tapas, agua), así que producir uno baja el stock disponible del
+  otro; el azúcar y la stevia solo afectan a su producto. Agregar otro producto
+  es agregar datos, no código. Las recetas se editan en **Ajustes → Configuración**.
 - **Movimiento** (event log inmutable): `compra`, `produccion` o `ajuste`. Nunca
   se edita ni se borra.
   - `compra` guarda las unidades que entraron y, como dato informativo, **cuántas
@@ -121,21 +127,27 @@ o cambiar de teléfono.
     tamaño* y capturar el empaque real (p. ej. 2 bolsas de 2 kg en promoción, en
     vez de la de 900 g de siempre) junto con lo que pagaste. Es solo para esa
     compra: el catálogo no se modifica.
-  - `produccion` guarda un **snapshot** de cuánto descontó de cada insumo, con la
+  - `produccion` guarda el producto y un **snapshot** de cuánto descontó de cada insumo, con la
     receta vigente en ese momento. Si luego cambias la receta, el pasado **no** se
     recalcula.
   - `ajuste` guarda el stock físico contado y el **descuadre** (físico − teórico).
     El descuadre queda visible en el historial; nunca se oculta.
 - **Stock** = Σ compras + Σ ajustes(descuadre) − Σ producciones.descuentos.
   Se calcula con un reducer puro en `src/domain/` (sin dependencias de UI).
+  Las producciones anteriores a los productos se leen como té con azúcar morena.
+- **Sugerencia de compra**: para cubrir el objetivo de **todos** los productos a
+  la vez (hoy 3 lotes de cada uno). Un insumo compartido suma el consumo de
+  ambos: p. ej. el té requiere 3×150 g + 3×150 g.
 
 El stock puede quedar **negativo** tras una producción (significa que el teórico
 estaba mal): la app no bloquea, lo muestra en rojo y sugiere contar físico.
 
 ### Semáforo
 
-- 🟢 verde: alcanza para más lotes que el umbral.
-- 🟡 amarillo: alcanza para el umbral o menos (hay que comprar pronto).
+Se calcula por producto, contra el mismo stock:
+
+- 🟢 verde: todos los insumos de su receta alcanzan para más lotes que el umbral.
+- 🟡 amarillo: algún insumo alcanza para el umbral o menos (hay que comprar pronto).
 - 🔴 rojo: no alcanza ni para un lote (0 o negativo).
 
 ---
@@ -144,15 +156,25 @@ estaba mal): la app no bloquea, lo muestra en rojo y sugiere contar físico.
 
 ```
 src/
-  domain/     Lógica pura (reducer de stock, lotes, semáforo, sugerencia) + tests
-  db/         Persistencia con Dexie (IndexedDB) y respaldo export/import
-  hooks/      useDatos: carga el estado desde Dexie
+  domain/     Lógica pura (stock, recetas, estado por producto, sugerencia,
+              migración, respaldo) + la interfaz AlmacenRepositorio + tests
+  db/         Persistencia con Dexie (IndexedDB): esquema y migraciones,
+              repositorio. Único lugar que conoce a Dexie
+  testing/    Repositorio en memoria y suite de contrato para los repositorios
+  hooks/      useDatos: carga el estado desde el repositorio
   ui/         Pantallas de React + armazon comun (Screen, TabBar, Icons, tema)
   styles.css  Sistema de diseno: tokens semanticos con tema claro/oscuro
 scripts/
   generate-icons.mjs   Genera los PNG del PWA (sin dependencias externas)
 ```
 
-Las pruebas (`npm test`) cubren solo `src/domain/`: reducer de stock, lotes,
-ajuste/descuadre, snapshot de receta, sugerencia de compra y un fixture con el
-stock real del negocio. No se prueba la UI (v1).
+La app depende de la interfaz `AlmacenRepositorio`; la UI recibe el repositorio
+por props. La base de datos está en la **versión 2** (productos con receta): al
+abrir una base antigua, Dexie migra el catálogo sin tocar el historial. Los
+respaldos exportados son `version: 2`; los `version: 1` se siguen pudiendo
+importar y se migran al leerlos.
+
+Las pruebas (`npm test`) cubren el dominio (stock, recetas, lotes por producto,
+sugerencia mixta con el stock real del negocio, migración y respaldo) y los
+repositorios (memoria y Dexie con `fake-indexeddb`, incluida la migración v1→v2).
+No se prueba la UI.
