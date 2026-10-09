@@ -6,3 +6,6 @@ export * from './estadoProducto';
 export * from './sugerencia';
 export * from './migracion';
 export * from './respaldo';
+export * from './repositorio';
+export * from './registro';
+export * from './inicializar';
