@@ -395,6 +395,24 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Tarjeta de producto: variante compacta del hero para apilar dos en el telefono */
+.hero.hero-producto {
+  padding: 16px 18px;
+}
+
+.hero-producto .cifra {
+  margin: 6px 0 2px;
+}
+
+.hero-producto .cifra b {
+  font-size: 44px;
+}
+
+.hero-producto .btn {
+  margin-top: 14px;
+  min-height: 48px;
+}
+
 /* Barra segmentada de capacidad */
 .segmentos {
   display: flex;
@@ -560,7 +578,7 @@ button {
 
 .acciones {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 

@@ -25,16 +25,26 @@ export function crearRespaldo(datos: Datos, ahora: Date = new Date()): Respaldo 
 
 /** Acepta respaldos v1 (los migra) y v2. Lanza un error legible si no es valido. */
 export function parsearRespaldo(data: unknown): Datos {
-  const r = data as Partial<Respaldo> & { version?: number } | null;
+  const r = data as {
+    formato?: unknown;
+    version?: unknown;
+    insumos?: unknown;
+    productos?: unknown;
+    movimientos?: unknown;
+  } | null;
   if (!r || r.formato !== 'almacen-te' || !Array.isArray(r.insumos) || !Array.isArray(r.movimientos)) {
     throw new Error(ERROR_INVALIDO);
   }
   if (r.version === 1) {
     const { insumos, productos } = migrarInsumosV1(r.insumos as InsumoV1[]);
-    return { insumos, productos, movimientos: r.movimientos };
+    return { insumos, productos, movimientos: r.movimientos as MovimientoRegistro[] };
   }
   if (r.version === 2 && Array.isArray(r.productos)) {
-    return { insumos: r.insumos, productos: r.productos, movimientos: r.movimientos };
+    return {
+      insumos: r.insumos as Insumo[],
+      productos: r.productos as Producto[],
+      movimientos: r.movimientos as MovimientoRegistro[],
+    };
   }
   throw new Error(ERROR_INVALIDO);
 }
