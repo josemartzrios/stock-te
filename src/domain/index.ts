@@ -3,3 +3,4 @@ export * from './seed';
 export * from './stock';
 export * from './receta';
 export * from './estadoProducto';
+export * from './sugerencia';
