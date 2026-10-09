@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
-import type { Insumo, MovimientoRegistro } from '../domain';
+import type { AlmacenRepositorio, Insumo, MovimientoRegistro, Producto } from '../domain';
 import { calcularStocks, lotesRestantes } from '../domain';
-import { agregarMovimiento } from '../db/db';
 import { Screen } from './Screen';
 import { cantidad, money, plural } from './format';
 import { IconCaja, IconChevron, IconMas, IconMenos } from './Icons';
 
 interface Props {
+  repo: AlmacenRepositorio;
   insumos: Insumo[];
+  productos: Producto[];
   movimientos: MovimientoRegistro[];
   /** Insumo preseleccionado al entrar desde la lista del inicio. */
   insumoId?: string;
@@ -17,7 +18,7 @@ interface Props {
 
 const MAX = 99;
 
-export function CompraScreen({ insumos, movimientos, insumoId, onGuardado, onCancelar }: Props) {
+export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, onGuardado, onCancelar }: Props) {
   const activos = useMemo(() => insumos.filter((i) => i.activo), [insumos]);
   const stocks = useMemo(() => calcularStocks(movimientos), [movimientos]);
 
@@ -78,7 +79,7 @@ export function CompraScreen({ insumos, movimientos, insumoId, onGuardado, onCan
     if (!sel) return;
     setGuardando(true);
     const costoTotal = costoValido ? costoNum : undefined;
-    await agregarMovimiento({
+    await repo.agregarMovimiento({
       tipo: 'compra',
       insumoId: sel.id,
       cantidad: unidades,

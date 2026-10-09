@@ -1,21 +1,21 @@
 import { useRef, useState } from 'react';
-import { exportarJSON, importarJSON } from '../db/db';
+import { crearRespaldo, parsearRespaldo, type AlmacenRepositorio } from '../domain';
 import { Screen } from './Screen';
 import { IconAlerta, IconExportar, IconImportar } from './Icons';
 
 interface Props {
+  repo: AlmacenRepositorio;
   onImportado: (msg: string) => void;
   onVolver: () => void;
 }
 
-export function RespaldoScreen({ onImportado, onVolver }: Props) {
+export function RespaldoScreen({ repo, onImportado, onVolver }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
 
   async function exportar() {
     setError('');
-    const data = await exportarJSON();
-    const json = JSON.stringify(data, null, 2);
+    const json = JSON.stringify(crearRespaldo(await repo.leerTodo()), null, 2);
     const fecha = new Date().toISOString().slice(0, 10);
     const nombre = `almacen-te-${fecha}.json`;
     const blob = new Blob([json], { type: 'application/json' });
@@ -55,7 +55,7 @@ export function RespaldoScreen({ onImportado, onVolver }: Props) {
     try {
       const texto = await file.text();
       const data = JSON.parse(texto);
-      await importarJSON(data);
+      await repo.reemplazarTodo(parsearRespaldo(data));
       onImportado('Respaldo importado');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo leer el archivo.');

@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { calcularEstado, calcularSugerencia } from './domain';
+import {
+  calcularEstadoInsumos,
+  calcularEstadoProductos,
+  calcularStocks,
+  calcularSugerencia,
+} from './domain';
+import { repositorioApp as repo } from './db/repositorioApp';
 import { useDatos } from './hooks/useDatos';
 import { Dashboard } from './ui/Dashboard';
 import { ProduceScreen } from './ui/ProduceScreen';
@@ -16,7 +22,7 @@ import { useTema } from './ui/tema';
 
 type Vista =
   | { t: Tab }
-  | { t: 'produje' }
+  | { t: 'produje'; productoId?: string }
   | { t: 'compre'; insumoId?: string }
   | { t: 'conte' }
   | { t: 'sugerencia' }
@@ -27,7 +33,7 @@ const TABS: Tab[] = ['inicio', 'historial', 'ajustes'];
 const esTab = (v: Vista): v is { t: Tab } => TABS.includes(v.t as Tab);
 
 export function App() {
-  const { datos, cargando, recargar } = useDatos();
+  const { datos, cargando, recargar } = useDatos(repo);
   const [vista, setVista] = useState<Vista>({ t: 'inicio' });
   const [toast, setToast] = useState<string | null>(null);
   const [tema, setTema] = useTema();
@@ -43,14 +49,15 @@ export function App() {
     window.scrollTo(0, 0);
   }, [vista.t]);
 
-  const estado = useMemo(
-    () => (datos ? calcularEstado(datos.insumos, datos.movimientos) : null),
-    [datos],
-  );
-  const sugerencia = useMemo(
-    () => (datos ? calcularSugerencia(datos.insumos, datos.movimientos, datos.config) : null),
-    [datos],
-  );
+  const derivado = useMemo(() => {
+    if (!datos) return null;
+    const stocks = calcularStocks(datos.movimientos);
+    return {
+      productos: calcularEstadoProductos(datos.insumos, datos.productos, stocks),
+      insumos: calcularEstadoInsumos(datos.insumos, datos.productos, stocks),
+      sugerencia: calcularSugerencia(datos.insumos, datos.productos, stocks),
+    };
+  }, [datos]);
 
   async function trasGuardar(msg: string, destino: Vista = { t: 'inicio' }) {
     await recargar();
@@ -58,7 +65,7 @@ export function App() {
     setVista(destino);
   }
 
-  if (cargando || !datos || !estado || !sugerencia) return <Esqueleto />;
+  if (cargando || !datos || !derivado) return <Esqueleto />;
 
   const conTabs = esTab(vista);
 
@@ -67,10 +74,10 @@ export function App() {
       <div className={`app${conTabs ? ' con-tabs' : ''}`}>
         {vista.t === 'inicio' && (
           <Dashboard
-            estado={estado}
-            objetivo={datos.config.capacidadObjetivo}
+            productos={derivado.productos}
+            insumos={derivado.insumos}
             sinMovimientos={datos.movimientos.length === 0}
-            onProduje={() => setVista({ t: 'produje' })}
+            onProduje={(productoId) => setVista({ t: 'produje', productoId })}
             onCompre={(insumoId) => setVista({ t: 'compre', insumoId })}
             onConte={() => setVista({ t: 'conte' })}
             onComprar={() => setVista({ t: 'sugerencia' })}
@@ -78,7 +85,11 @@ export function App() {
         )}
 
         {vista.t === 'historial' && (
-          <HistorialScreen insumos={datos.insumos} movimientos={datos.movimientos} />
+          <HistorialScreen
+            insumos={datos.insumos}
+            productos={datos.productos}
+            movimientos={datos.movimientos}
+          />
         )}
 
         {vista.t === 'ajustes' && (
@@ -94,8 +105,11 @@ export function App() {
 
         {vista.t === 'produje' && (
           <ProduceScreen
+            repo={repo}
             insumos={datos.insumos}
+            productos={datos.productos}
             movimientos={datos.movimientos}
+            productoIdInicial={vista.productoId ?? datos.productos[0]?.id ?? ''}
             onGuardado={trasGuardar}
             onCancelar={() => setVista({ t: 'inicio' })}
           />
@@ -103,7 +117,9 @@ export function App() {
 
         {vista.t === 'compre' && (
           <CompraScreen
+            repo={repo}
             insumos={datos.insumos}
+            productos={datos.productos}
             movimientos={datos.movimientos}
             insumoId={vista.insumoId}
             onGuardado={trasGuardar}
@@ -113,6 +129,7 @@ export function App() {
 
         {vista.t === 'conte' && (
           <ConteoScreen
+            repo={repo}
             insumos={datos.insumos}
             movimientos={datos.movimientos}
             onGuardado={trasGuardar}
@@ -122,7 +139,7 @@ export function App() {
 
         {vista.t === 'sugerencia' && (
           <SugerenciaScreen
-            sugerencia={sugerencia}
+            sugerencia={derivado.sugerencia}
             onCancelar={() => setVista({ t: 'inicio' })}
             onIrACompra={(insumoId) => setVista({ t: 'compre', insumoId })}
           />
@@ -130,8 +147,9 @@ export function App() {
 
         {vista.t === 'config' && (
           <ConfigScreen
+            repo={repo}
             insumos={datos.insumos}
-            config={datos.config}
+            productos={datos.productos}
             onGuardado={(m) => trasGuardar(m, { t: 'ajustes' })}
             onVolver={() => setVista({ t: 'ajustes' })}
           />
@@ -139,6 +157,7 @@ export function App() {
 
         {vista.t === 'respaldo' && (
           <RespaldoScreen
+            repo={repo}
             onImportado={(m) => trasGuardar(m, { t: 'inicio' })}
             onVolver={() => setVista({ t: 'ajustes' })}
           />
@@ -149,7 +168,7 @@ export function App() {
         <TabBar
           actual={vista.t}
           onCambiar={(t) => setVista({ t })}
-          alerta={estado.hayQueComprar}
+          alerta={derivado.insumos.some((e) => e.necesitaCompra)}
         />
       )}
 

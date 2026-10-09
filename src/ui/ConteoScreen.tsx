@@ -1,19 +1,19 @@
 import { useMemo, useState } from 'react';
-import type { Insumo, MovimientoRegistro } from '../domain';
+import type { AlmacenRepositorio, Insumo, MovimientoRegistro } from '../domain';
 import { calcularDescuadre, calcularStocks } from '../domain';
-import { agregarMovimiento } from '../db/db';
 import { Screen } from './Screen';
 import { cantidad, plural } from './format';
 import { IconCaja, IconChevron, IconConteo } from './Icons';
 
 interface Props {
+  repo: AlmacenRepositorio;
   insumos: Insumo[];
   movimientos: MovimientoRegistro[];
   onGuardado: (msg: string) => void;
   onCancelar: () => void;
 }
 
-export function ConteoScreen({ insumos, movimientos, onGuardado, onCancelar }: Props) {
+export function ConteoScreen({ repo, insumos, movimientos, onGuardado, onCancelar }: Props) {
   const activos = useMemo(() => insumos.filter((i) => i.activo), [insumos]);
   const stocks = useMemo(() => calcularStocks(movimientos), [movimientos]);
 
@@ -69,7 +69,7 @@ export function ConteoScreen({ insumos, movimientos, onGuardado, onCancelar }: P
   async function guardar() {
     if (!actual || fisicoNum === null) return;
     setGuardando(true);
-    await agregarMovimiento({
+    await repo.agregarMovimiento({
       tipo: 'ajuste',
       insumoId: actual.id,
       stockFisico: fisicoNum,
