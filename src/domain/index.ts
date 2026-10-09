@@ -1,3 +1,4 @@
 export * from './types';
-export * from './calc';
 export * from './seed';
+export * from './stock';
+export * from './receta';
