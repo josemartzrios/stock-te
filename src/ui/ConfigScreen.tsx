@@ -51,7 +51,8 @@ function aplicarInsumo(i: Insumo, b: BorradorInsumo): Insumo {
 const distinto = (a: unknown, b: unknown) => JSON.stringify(a) !== JSON.stringify(b);
 
 export function ConfigScreen({ repo, insumos, productos, onGuardado, onVolver }: Props) {
-  const activos = useMemo(() => insumos.filter((i) => i.activo), [insumos]);
+  // Lo hecho en casa (hielo) no lleva receta, precio ni umbral: no se configura aqui.
+  const activos = useMemo(() => insumos.filter((i) => i.activo && !i.hechoEnCasa), [insumos]);
   const [productoId, setProductoId] = useState(productos[0]?.id ?? '');
   const [bProductos, setBProductos] = useState(() =>
     Object.fromEntries(productos.map((p) => [p.id, borradorProducto(p)])),
@@ -125,7 +126,7 @@ export function ConfigScreen({ repo, insumos, productos, onGuardado, onVolver }:
         </>
       )}
 
-      {insumos.map((i) => (
+      {insumos.filter((i) => !i.hechoEnCasa).map((i) => (
         <InsumoEditor
           key={i.id}
           insumo={i}

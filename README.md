@@ -120,6 +120,11 @@ o cambiar de teléfono.
   botellas, tapas, agua), así que producir uno baja el stock disponible del
   otro; el azúcar y la stevia solo afectan a su producto. Agregar otro producto
   es agregar datos, no código. Las recetas se editan en **Ajustes → Configuración**.
+- **Hielo** (hecho en casa): se cuenta en charolas y no se compra, así que no
+  tiene precio, no entra a la sugerencia de compra ni a las recetas. Solo
+  importa si hay o no: sin hielo, el inicio muestra **Sin hielo · ponlo a
+  congelar**. Tocando su fila registras cuántas charolas pusiste (queda en el
+  historial como *A congelar*); cuando se acabe, márcalo en **Conté**.
 - **Movimiento** (event log inmutable): `compra`, `produccion` o `ajuste`. Nunca
   se edita ni se borra.
   - `compra` guarda las unidades que entraron y, como dato informativo, **cuántas
@@ -169,8 +174,9 @@ scripts/
 ```
 
 La app depende de la interfaz `AlmacenRepositorio`; la UI recibe el repositorio
-por props. La base de datos está en la **versión 2** (productos con receta): al
-abrir una base antigua, Dexie migra el catálogo sin tocar el historial. Los
+por props. La base de datos está en la **versión 3** (v2: productos con receta; v3: el
+hielo): al abrir una base antigua, Dexie migra el catálogo sin tocar el
+historial. Importar un respaldo sin hielo también lo agrega. Los
 respaldos exportados son `version: 2`; los `version: 1` se siguen pudiendo
 importar y se migran al leerlos.
 

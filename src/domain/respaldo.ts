@@ -1,4 +1,4 @@
-import { migrarInsumosV1, type InsumoV1 } from './migracion';
+import { asegurarInsumosCasa, migrarInsumosV1, type InsumoV1 } from './migracion';
 import type { Datos, Insumo, MovimientoRegistro, Producto } from './types';
 
 export interface Respaldo {
@@ -23,7 +23,7 @@ export function crearRespaldo(datos: Datos, ahora: Date = new Date()): Respaldo 
   };
 }
 
-/** Acepta respaldos v1 (los migra) y v2. Lanza un error legible si no es valido. */
+/** Acepta respaldos v1 (los migra) y v2; a ambos les agrega el hielo si no lo traen. Lanza un error legible si no es valido. */
 export function parsearRespaldo(data: unknown): Datos {
   const r = data as {
     formato?: unknown;
@@ -37,11 +37,11 @@ export function parsearRespaldo(data: unknown): Datos {
   }
   if (r.version === 1) {
     const { insumos, productos } = migrarInsumosV1(r.insumos as InsumoV1[]);
-    return { insumos, productos, movimientos: r.movimientos as MovimientoRegistro[] };
+    return { insumos: asegurarInsumosCasa(insumos), productos, movimientos: r.movimientos as MovimientoRegistro[] };
   }
   if (r.version === 2 && Array.isArray(r.productos)) {
     return {
-      insumos: r.insumos as Insumo[],
+      insumos: asegurarInsumosCasa(r.insumos as Insumo[]),
       productos: r.productos as Producto[],
       movimientos: r.movimientos as MovimientoRegistro[],
     };

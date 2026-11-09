@@ -80,7 +80,10 @@ export function lotesParaStock(insumoId: string, productos: Producto[], stock: n
   return usos.length ? Math.min(...usos.map((u) => lotesRestantes(stock, u).lotes)) : null;
 }
 
-/** Un estado por insumo activo; `lotes` es el peor caso entre los productos que lo usan. */
+/**
+ * Un estado por insumo activo; `lotes` es el peor caso entre los productos que lo usan.
+ * Un insumo hecho en casa es verde si hay, rojo si no, y nunca pide compra.
+ */
 export function calcularEstadoInsumos(
   insumos: Insumo[],
   productos: Producto[],
@@ -91,6 +94,10 @@ export function calcularEstadoInsumos(
     .map((insumo) => {
       const stock = stocks[insumo.id] ?? 0;
       const negativo = stock < 0;
+      if (insumo.hechoEnCasa) {
+        // Solo importa si hay o no; no se compra.
+        return { insumo, stock, lotes: null, negativo, color: stock > 0 ? 'verde' : 'rojo', necesitaCompra: false };
+      }
       const lotes = lotesParaStock(insumo.id, productos, stock);
       const color: Color =
         lotes === null ? (negativo ? 'rojo' : 'verde') : colorSemaforo(lotes, negativo, insumo.umbralLotes);

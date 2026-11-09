@@ -7,7 +7,7 @@ import { reg } from './testHelpers';
 const CONSUMO_V1: Record<string, number> = { te: 150, azucar: 800, limon: 22, pet: 18, tapa: 18, agua: 9.5 };
 
 function insumosV1(editar: Record<string, number> = {}): InsumoV1[] {
-  return CATALOGO_SEMILLA.filter((i) => i.id !== 'stevia').map((i) => ({
+  return CATALOGO_SEMILLA.filter((i) => i.id !== 'stevia' && i.id !== 'hielo').map((i) => ({
     ...i,
     consumoPorLote: editar[i.id] ?? CONSUMO_V1[i.id],
   }));

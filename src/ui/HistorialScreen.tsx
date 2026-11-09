@@ -3,7 +3,7 @@ import type { Insumo, MovimientoRegistro, Producto } from '../domain';
 import { ordenarLog, productoIdDeProduccion } from '../domain';
 import { Screen } from './Screen';
 import { cantidad, claveDia, etiquetaDia, hora, money, plural } from './format';
-import { IconBotella, IconCarrito, IconConteo, IconHistorial } from './Icons';
+import { IconBotella, IconCarrito, IconConteo, IconHielo, IconHistorial } from './Icons';
 
 interface Props {
   insumos: Insumo[];
@@ -32,6 +32,7 @@ export function HistorialScreen({ insumos, productos, movimientos }: Props) {
   const nombre = (id: string) => insumos.find((i) => i.id === id)?.nombre ?? id;
   const producto = (id: string) => productos.find((p) => p.id === id)?.nombre ?? id;
   const unidad = (id: string) => insumos.find((i) => i.id === id)?.unidadBase ?? '';
+  const enCasa = (id: string) => Boolean(insumos.find((i) => i.id === id)?.hechoEnCasa);
 
   // Cronologico inverso y agrupado por dia, para poder leerlo como una bitacora.
   const dias = useMemo(() => {
@@ -87,7 +88,8 @@ export function HistorialScreen({ insumos, productos, movimientos }: Props) {
           <div key={g.clave}>
             <div className="dia">{etiquetaDia(g.clave)}</div>
             {g.items.map((r) => {
-              const Icono = ICONO[r.mov.tipo];
+              const congele = r.mov.tipo === 'compra' && enCasa(r.mov.insumoId);
+              const Icono = congele ? IconHielo : ICONO[r.mov.tipo];
               return (
                 <article key={r.id} className={`evento ${r.mov.tipo}`}>
                   <span className="marca">
@@ -97,14 +99,17 @@ export function HistorialScreen({ insumos, productos, movimientos }: Props) {
                     {r.mov.tipo === 'compra' && (
                       <>
                         <div className="que">
-                          <span>Compra · {nombre(r.mov.insumoId)}</span>
+                          <span>
+                            {congele ? 'A congelar' : 'Compra'} · {nombre(r.mov.insumoId)}
+                          </span>
                           <span className="hora">{hora(r.timestamp)}</span>
                         </div>
                         <div className="detalle">
                           <span className="tag-pos">
                             +{cantidad(r.mov.cantidad, unidad(r.mov.insumoId))}
                           </span>
-                          {r.mov.presentaciones !== undefined &&
+                          {!congele &&
+                            r.mov.presentaciones !== undefined &&
                             r.mov.presentacionCantidad !== undefined &&
                             ` · ${r.mov.presentaciones} × ${cantidad(
                               r.mov.presentacionCantidad,

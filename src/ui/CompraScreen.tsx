@@ -3,7 +3,7 @@ import type { AlmacenRepositorio, Insumo, MovimientoRegistro, Producto } from '.
 import { calcularStocks, lotesParaStock } from '../domain';
 import { Screen } from './Screen';
 import { cantidad, money, plural } from './format';
-import { IconCaja, IconChevron, IconMas, IconMenos } from './Icons';
+import { IconCaja, IconChevron, IconHielo, IconMas, IconMenos } from './Icons';
 
 interface Props {
   repo: AlmacenRepositorio;
@@ -20,6 +20,8 @@ const MAX = 99;
 
 export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, onGuardado, onCancelar }: Props) {
   const activos = useMemo(() => insumos.filter((i) => i.activo), [insumos]);
+  // El hielo no se compra: se registra desde su fila en el inicio.
+  const comprables = useMemo(() => activos.filter((i) => !i.hechoEnCasa), [activos]);
   const stocks = useMemo(() => calcularStocks(movimientos), [movimientos]);
 
   const [sel, setSel] = useState<Insumo | null>(
@@ -87,7 +89,7 @@ export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, 
       presentacionCantidad: tamUsado,
       ...(costoTotal !== undefined ? { costoTotal } : {}),
     });
-    onGuardado(`Compra de ${sel.nombre} registrada`);
+    onGuardado(sel.hechoEnCasa ? `${sel.nombre} puesto a congelar` : `Compra de ${sel.nombre} registrada`);
   }
 
   if (!sel) {
@@ -99,7 +101,7 @@ export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, 
         volverLabel="Cancelar"
       >
         <div className="selector">
-          {activos.map((i) => (
+          {comprables.map((i) => (
             <button key={i.id} className="opcion" onClick={() => elegir(i)}>
               <span className="marca">
                 <IconCaja size={20} />
@@ -120,6 +122,47 @@ export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, 
 
   const stockNuevo = (stocks[sel.id] ?? 0) + unidades;
   const lotesNuevos = lotesParaStock(sel.id, productos, stockNuevo);
+  const stepper = (
+    <div className="stepper" role="group" aria-labelledby="lbl-pres">
+      <button onClick={() => setPres((n) => Math.max(1, n - 1))} disabled={pres <= 1} aria-label="Una menos">
+        <IconMenos size={26} />
+      </button>
+      <span className="valor" aria-live="polite">
+        {pres}
+      </span>
+      <button onClick={() => setPres((n) => Math.min(MAX, n + 1))} disabled={pres >= MAX} aria-label="Una más">
+        <IconMas size={26} />
+      </button>
+    </div>
+  );
+
+  // Hecho en casa (hielo): solo cuantas pusiste a congelar. Sin costo ni empaque.
+  if (sel.hechoEnCasa) {
+    return (
+      <Screen
+        titulo={sel.nombre}
+        descripcion="Lo que acabas de poner a congelar."
+        onVolver={onCancelar}
+        volverLabel="Cancelar"
+        pie={
+          <button className="btn btn-primario" onClick={guardar} disabled={guardando || unidades <= 0}>
+            Guardar
+          </button>
+        }
+      >
+        <div className="campo">
+          <label id="lbl-pres">
+            <IconHielo size={16} /> ¿Cuántas {sel.unidadBase} pusiste?
+          </label>
+          {stepper}
+          <p className="ayuda">Cuando se acabe, márcalo en Conté (0 {sel.unidadBase}).</p>
+        </div>
+        <div className="resumen">
+          + {cantidad(unidades, sel.unidadBase)} · quedas con {cantidad(stockNuevo, sel.unidadBase)}
+        </div>
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -135,25 +178,7 @@ export function CompraScreen({ repo, insumos, productos, movimientos, insumoId, 
     >
       <div className="campo">
         <label id="lbl-pres">¿Cuántas presentaciones?</label>
-        <div className="stepper" role="group" aria-labelledby="lbl-pres">
-          <button
-            onClick={() => setPres((n) => Math.max(1, n - 1))}
-            disabled={pres <= 1}
-            aria-label="Una menos"
-          >
-            <IconMenos size={26} />
-          </button>
-          <span className="valor" aria-live="polite">
-            {pres}
-          </span>
-          <button
-            onClick={() => setPres((n) => Math.min(MAX, n + 1))}
-            disabled={pres >= MAX}
-            aria-label="Una más"
-          >
-            <IconMas size={26} />
-          </button>
-        </div>
+        {stepper}
         <p className="ayuda">
           {pres} × {otroTam ? cantidad(tamUsado, sel.unidadBase) : sel.presentacionNombre}
         </p>

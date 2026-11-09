@@ -20,7 +20,7 @@ export function calcularSugerencia(
   const lineas: LineaSugerencia[] = [];
 
   for (const insumo of insumos) {
-    if (!insumo.activo) continue;
+    if (!insumo.activo || insumo.hechoEnCasa) continue; // el hielo no se compra
     const usos = activos
       .map((p) => ({ porLote: p.receta[insumo.id], objetivo: p.objetivoLotes }))
       .filter((u) => u.porLote !== undefined && u.porLote > 0);

@@ -525,6 +525,11 @@ button {
   flex: none;
 }
 
+.aviso-accion.sin-hielo .marca {
+  background: var(--rojo-suave);
+  color: var(--rojo);
+}
+
 .aviso-accion.brand .marca {
   background: var(--brand-suave);
   color: var(--brand);

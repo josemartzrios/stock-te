@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { migrarInsumosV1, type InsumoV1 } from '../domain/migracion';
+import { asegurarInsumosCasa, migrarInsumosV1, type InsumoV1 } from '../domain/migracion';
 import type { Insumo, MovimientoRegistro, Producto } from '../domain';
 
 export class AlmacenDB extends Dexie {
@@ -25,6 +25,15 @@ export class AlmacenDB extends Dexie {
         await tx.table('insumos').clear();
         await tx.table('insumos').bulkAdd(insumos);
         await tx.table('productos').bulkAdd(productos);
+      });
+    // v3: insumos hechos en casa (el hielo). Solo agrega lo que falta; nada mas cambia.
+    this.version(3)
+      .stores({})
+      .upgrade(async (tx) => {
+        const tabla = tx.table<Insumo, string>('insumos');
+        const actuales = await tabla.toArray();
+        const nuevos = asegurarInsumosCasa(actuales).slice(actuales.length);
+        if (nuevos.length) await tabla.bulkAdd(nuevos);
       });
   }
 }

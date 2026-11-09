@@ -2,7 +2,7 @@ import type { EstadoInsumo, EstadoProducto } from '../domain';
 import { Screen } from './Screen';
 import { ProductoCard } from './ProductoCard';
 import { cantidad, plural } from './format';
-import { IconAlerta, IconCarrito, IconChevron, IconConteo, IconRayo } from './Icons';
+import { IconAlerta, IconCarrito, IconChevron, IconConteo, IconHielo, IconRayo } from './Icons';
 
 interface Props {
   productos: EstadoProducto[];
@@ -25,6 +25,8 @@ export function Dashboard({
 }: Props) {
   const porComprar = insumos.filter((e) => e.necesitaCompra).length;
   const hayQueComprar = porComprar > 0;
+  // Lo que se prepara en casa (el hielo) y ya no hay: se avisa aparte, no es compra.
+  const faltaEnCasa = insumos.filter((e) => e.insumo.hechoEnCasa && e.stock <= 0);
   const meta = Math.max(1, ...productos.map((p) => p.producto.objetivoLotes));
 
   return (
@@ -61,6 +63,20 @@ export function Dashboard({
         )
       )}
 
+      {!sinMovimientos &&
+        faltaEnCasa.map((e) => (
+          <button key={e.insumo.id} className="aviso-accion sin-hielo" onClick={() => onCompre(e.insumo.id)}>
+            <span className="marca">
+              <IconHielo size={20} />
+            </span>
+            <span className="cuerpo">
+              <b>Sin {e.insumo.nombre.toLowerCase()}</b>
+              <span>Ponlo a congelar y regístralo aquí</span>
+            </span>
+            <IconChevron size={20} className="flecha" />
+          </button>
+        ))}
+
       <div className="seccion">
         <h3>Registrar</h3>
       </div>
@@ -89,13 +105,17 @@ export function Dashboard({
 
       <div className="lista">
         {insumos.map((e) => {
-          const llenado = e.lotes === null ? 0 : Math.min(e.lotes / meta, 1) * 100;
+          const casa = Boolean(e.insumo.hechoEnCasa);
+          const hay = e.stock > 0;
+          const llenado = casa ? (hay ? 100 : 0) : e.lotes === null ? 0 : Math.min(e.lotes / meta, 1) * 100;
           return (
             <button
               key={e.insumo.id}
               className="insumo"
               onClick={() => onCompre(e.insumo.id)}
-              aria-label={`${e.insumo.nombre}: ${cantidad(e.stock, e.insumo.unidadBase)}. Registrar compra`}
+              aria-label={`${e.insumo.nombre}: ${cantidad(e.stock, e.insumo.unidadBase)}. ${
+                casa ? 'Registrar que pusiste a congelar' : 'Registrar compra'
+              }`}
             >
               <span className="nombre">
                 <i className={`punto-estado ${e.color}`} />
@@ -109,8 +129,12 @@ export function Dashboard({
                 <span className="barra">
                   <i className={e.color} style={{ width: `${llenado}%` }} />
                 </span>
-                <span className={`txt${e.negativo ? ' alerta' : ''}`}>
-                  {e.negativo
+                <span className={`txt${e.negativo || (casa && !hay) ? ' alerta' : ''}`}>
+                  {casa
+                    ? hay
+                      ? `Hay ${e.insumo.nombre.toLowerCase()}`
+                      : 'No hay · ponlo a congelar'
+                    : e.negativo
                     ? 'Negativo · contar físico'
                     : e.lotes === null
                       ? 'Sin uso en recetas'

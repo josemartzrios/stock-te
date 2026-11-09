@@ -1,5 +1,18 @@
 import type { Insumo, Producto } from './types';
 
+/** Hielo: lo congelas tu en charolas. Solo interesa saber si hay o no. */
+export const HIELO: Insumo = {
+  id: 'hielo',
+  nombre: 'Hielo',
+  unidadBase: 'charolas',
+  presentacionNombre: 'charola',
+  presentacionCantidad: 1,
+  presentacionPrecio: 0,
+  umbralLotes: 0,
+  activo: true,
+  hechoEnCasa: true,
+};
+
 /**
  * Catalogo inicial real del negocio. Se siembra en el primer arranque.
  * El stock arranca en CERO eventos: el primer uso real es un conteo fisico.
@@ -75,6 +88,7 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     umbralLotes: 2,
     activo: true,
   },
+  HIELO,
 ];
 
 /** Recetas por lote. Editables en Configuracion (aun no estan estandarizadas). */
