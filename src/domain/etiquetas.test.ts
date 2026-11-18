@@ -3,6 +3,9 @@ import { CATALOGO_SEMILLA, ETIQUETA_NORMAL, ETIQUETA_SIN_AZUCAR, PRODUCTOS_SEMIL
 import { calcularEstadoInsumos, calcularEstadoProductos } from './estadoProducto';
 import { calcularSugerencia } from './sugerencia';
 import { armarProduccion } from './receta';
+import { asegurarEtiquetas } from './migracion';
+import { catalogoSinEtiquetas, productosSinEtiquetas } from './testHelpers';
+import type { Insumo, Producto } from './types';
 
 const [morena, stevia] = PRODUCTOS_SEMILLA;
 const HOLGADO: Record<string, number> = {
@@ -96,5 +99,86 @@ describe('etiquetas en Que comprar', () => {
     expect(s.lineas.find((l) => l.insumo.id === 'etiqueta-normal')).toMatchObject({
       faltante: 108, presentaciones: 2, costoEstimado: 160,
     });
+  });
+});
+
+// Congela en profundidad: si la funcion muta una entrada, la prueba lanza TypeError.
+const congelar = <T>(x: T): T => {
+  if (x && typeof x === 'object') {
+    Object.values(x).forEach(congelar);
+    Object.freeze(x);
+  }
+  return x;
+};
+
+describe('asegurarEtiquetas', () => {
+  const cat = catalogoSinEtiquetas;
+  const prods = productosSinEtiquetas;
+
+  it('agrega las dos etiquetas al final, cada una en la receta de su producto, sin mutar las entradas', () => {
+    const entrada = congelar(cat());
+    const r = asegurarEtiquetas(entrada, congelar(prods()));
+    expect(r.insumos.slice(0, entrada.length)).toEqual(entrada);
+    expect(r.insumos.slice(-2)).toEqual([ETIQUETA_NORMAL, ETIQUETA_SIN_AZUCAR]);
+    expect(r.productos.map((p) => p.receta)).toEqual(PRODUCTOS_SEMILLA.map((p) => p.receta));
+  });
+
+  it('respeta una receta editada (te 160) y una etiqueta ya puesta en 20 por lote', () => {
+    const [m, s] = prods();
+    const editado = { ...m, receta: { ...m.receta, te: 160, 'etiqueta-normal': 20 } };
+    const r = asegurarEtiquetas(cat(), [editado, s]);
+    expect(r.productos[0].receta).toMatchObject({ te: 160, 'etiqueta-normal': 20 });
+    expect(r.productos[1].receta['etiqueta-sin-azucar']).toBe(18);
+  });
+
+  it('respeta una etiqueta puesta en 0 en la receta (el usuario la desactivo)', () => {
+    const [m, s] = prods();
+    const r = asegurarEtiquetas(cat(), [{ ...m, receta: { ...m.receta, 'etiqueta-normal': 0 } }, s]);
+    expect(r.productos[0].receta['etiqueta-normal']).toBe(0);
+  });
+
+  it('no pisa una etiqueta existente (editada o desactivada) ni la vuelve a poner en la receta', () => {
+    const editada = { ...ETIQUETA_NORMAL, presentacionPrecio: 95, activo: false };
+    const r = asegurarEtiquetas([...cat(), editada], prods());
+    expect(r.insumos.filter((i) => i.id === 'etiqueta-normal')).toEqual([editada]);
+    expect(r.productos[0].receta['etiqueta-normal']).toBeUndefined();
+    expect(r.insumos.filter((i) => i.id === 'etiqueta-sin-azucar')).toHaveLength(1);
+    expect(r.productos[1].receta['etiqueta-sin-azucar']).toBe(18);
+  });
+
+  it('un catalogo vacio se deja vacio aunque haya productos (lo siembra la inicializacion)', () => {
+    const productos = prods();
+    const r = asegurarEtiquetas([], productos);
+    expect(r.insumos).toEqual([]);
+    expect(r.productos).toEqual(productos);
+  });
+
+  it('es idempotente: aplicarlo dos veces no duplica nada', () => {
+    const una = asegurarEtiquetas(cat(), prods());
+    expect(asegurarEtiquetas(una.insumos, una.productos)).toEqual(una);
+  });
+
+  it.each(['otro', 'constructor', 'toString', '__proto__', 'valueOf'])(
+    'ignora un producto con id %s y solo agrega los 2 insumos',
+    (id) => {
+      const p = { id, nombre: 'x', receta: { te: 100 }, objetivoLotes: 3, activo: true };
+      const r = asegurarEtiquetas(cat(), [p]);
+      expect(r.productos).toEqual([p]);
+      expect(r.insumos).toHaveLength(cat().length + 2);
+    },
+  );
+
+  it.each([['sin receta', undefined], ['receta null', null], ['receta texto', 'x'], ['receta arreglo', []]])(
+    '%s: no lanza y deja el producto como esta',
+    (_nombre, receta) => {
+      const raro = { id: 'morena', nombre: 'x', receta, objetivoLotes: 3, activo: false } as unknown as Producto;
+      expect(() => asegurarEtiquetas(cat(), [raro])).not.toThrow();
+      expect(asegurarEtiquetas(cat(), [raro]).productos).toEqual([raro]);
+    },
+  );
+
+  it('no lanza con elementos nulos en el catalogo o en los productos', () => {
+    const nulo = null as unknown as Insumo;
+    expect(() => asegurarEtiquetas([nulo, ...cat()], [null as unknown as Producto, ...prods()])).not.toThrow();
   });
 });

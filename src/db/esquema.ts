@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { asegurarInsumosCasa, migrarInsumosV1, type InsumoV1 } from '../domain/migracion';
+import { asegurarEtiquetas, asegurarInsumosCasa, migrarInsumosV1, type InsumoV1 } from '../domain/migracion';
 import type { Insumo, MovimientoRegistro, Producto } from '../domain';
 
 export class AlmacenDB extends Dexie {
@@ -34,6 +34,19 @@ export class AlmacenDB extends Dexie {
         const actuales = await tabla.toArray();
         const nuevos = asegurarInsumosCasa(actuales).slice(actuales.length);
         if (nuevos.length) await tabla.bulkAdd(nuevos);
+      });
+    // v4: etiquetas por producto. Solo agrega lo que falta; nada mas cambia.
+    this.version(4)
+      .stores({})
+      .upgrade(async (tx) => {
+        const tablaInsumos = tx.table<Insumo, string>('insumos');
+        const tablaProductos = tx.table<Producto, string>('productos');
+        const insumos = await tablaInsumos.toArray();
+        const resultado = asegurarEtiquetas(insumos, await tablaProductos.toArray());
+        const nuevos = resultado.insumos.slice(insumos.length);
+        if (nuevos.length === 0) return;
+        await tablaInsumos.bulkAdd(nuevos);
+        await tablaProductos.bulkPut(resultado.productos);
       });
   }
 }

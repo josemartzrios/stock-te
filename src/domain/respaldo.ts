@@ -1,4 +1,4 @@
-import { asegurarInsumosCasa, migrarInsumosV1, type InsumoV1 } from './migracion';
+import { asegurarEtiquetas, asegurarInsumosCasa, migrarInsumosV1, type InsumoV1 } from './migracion';
 import type { Datos, Insumo, MovimientoRegistro, Producto } from './types';
 
 export interface Respaldo {
@@ -23,7 +23,12 @@ export function crearRespaldo(datos: Datos, ahora: Date = new Date()): Respaldo 
   };
 }
 
-/** Acepta respaldos v1 (los migra) y v2; a ambos les agrega el hielo si no lo traen. Lanza un error legible si no es valido. */
+/** Pone al dia un catalogo viejo: agrega el hielo y las etiquetas que falten. */
+function completarCatalogo(insumos: Insumo[], productos: Producto[]): { insumos: Insumo[]; productos: Producto[] } {
+  return asegurarEtiquetas(asegurarInsumosCasa(insumos), productos);
+}
+
+/** Acepta respaldos v1 (los migra) y v2; a ambos les agrega el hielo y las etiquetas si no las traen. Lanza un error legible si no es valido. */
 export function parsearRespaldo(data: unknown): Datos {
   const r = data as {
     formato?: unknown;
@@ -37,12 +42,11 @@ export function parsearRespaldo(data: unknown): Datos {
   }
   if (r.version === 1) {
     const { insumos, productos } = migrarInsumosV1(r.insumos as InsumoV1[]);
-    return { insumos: asegurarInsumosCasa(insumos), productos, movimientos: r.movimientos as MovimientoRegistro[] };
+    return { ...completarCatalogo(insumos, productos), movimientos: r.movimientos as MovimientoRegistro[] };
   }
   if (r.version === 2 && Array.isArray(r.productos)) {
     return {
-      insumos: asegurarInsumosCasa(r.insumos as Insumo[]),
-      productos: r.productos as Producto[],
+      ...completarCatalogo(r.insumos as Insumo[], r.productos as Producto[]),
       movimientos: r.movimientos as MovimientoRegistro[],
     };
   }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CATALOGO_SEMILLA, PRODUCTOS_SEMILLA } from './seed';
 import { crearRespaldo, parsearRespaldo } from './respaldo';
-import { catalogoSinEtiquetas, reg } from './testHelpers';
+import { catalogoSinEtiquetas, productosSinEtiquetas, reg } from './testHelpers';
 import type { Datos } from './types';
 
 const MENSAJE = 'El archivo no es un respaldo valido de Almacen Te.';
@@ -35,6 +35,27 @@ describe('respaldo v1', () => {
     expect(parsed.productos.map((p) => p.id)).toEqual(['morena', 'stevia']);
     expect(parsed.productos[0].receta.te).toBe(100);
     expect(parsed.insumos.some((i) => 'consumoPorLote' in i)).toBe(false);
+    expect(parsed.productos[0].receta['etiqueta-normal']).toBe(18);
+    expect(parsed.productos[1].receta['etiqueta-sin-azucar']).toBe(18);
+    expect(parsed.insumos.filter((i) => i.id.startsWith('etiqueta'))).toHaveLength(2);
+  });
+});
+
+describe('respaldos sin etiquetas', () => {
+  it('un respaldo v2 sin etiquetas las agrega y no toca los movimientos', () => {
+    const sin = { ...datos, insumos: catalogoSinEtiquetas(), productos: productosSinEtiquetas() };
+    const parsed = parsearRespaldo(JSON.parse(JSON.stringify(crearRespaldo(sin))));
+    expect(parsed.insumos.map((i) => i.id)).toEqual(expect.arrayContaining(['etiqueta-normal', 'etiqueta-sin-azucar']));
+    expect(parsed.productos.map((p) => p.receta)).toEqual(PRODUCTOS_SEMILLA.map((p) => p.receta));
+    expect(parsed.movimientos).toEqual(datos.movimientos);
+  });
+
+  it('un respaldo parcial sin catalogo (insumos vacios) se queda sin catalogo', () => {
+    const parcial = { ...datos, insumos: [], productos: productosSinEtiquetas() };
+    const parsed = parsearRespaldo(JSON.parse(JSON.stringify(crearRespaldo(parcial))));
+    expect(parsed.insumos).toEqual([]);
+    expect(parsed.productos).toEqual(productosSinEtiquetas());
+    expect(parsed.movimientos).toEqual(datos.movimientos);
   });
 });
 

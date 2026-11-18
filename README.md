@@ -47,6 +47,11 @@ primer día haces un **conteo físico** de cada insumo:
 A partir de ahí, cada día registras con un tap: **Produje** (en la tarjeta del
 producto que hiciste), **Compré** o **Conté**.
 
+Si ya usabas la app, al actualizar aparecen las etiquetas con stock en cero y
+los dos productos se ven en rojo hasta que las cuentes con **Conté → Etiqueta
+te normal** y **Etiqueta te sin azucar**. Cuéntalas con Conté, no con Compré:
+registrar ahí una compra sustituiría el conteo real.
+
 ---
 
 ## Desplegar gratis
@@ -106,7 +111,8 @@ Los datos viven **solo en tu iPhone** (IndexedDB). Para no perderlos:
   Pide confirmación explícita porque **sobrescribe todo**.
 
 Conviene exportar un respaldo cada cierto tiempo, sobre todo antes de reinstalar
-o cambiar de teléfono.
+o cambiar de teléfono, y antes de actualizar la app a una versión nueva (la base
+solo avanza de versión, no se puede volver atrás).
 
 ---
 
@@ -118,8 +124,12 @@ o cambiar de teléfono.
   consume un lote) y su **objetivo de lotes** para sugerir compras. Hoy hay dos:
   té con azúcar morena y té con stevia. Los insumos son compartidos (té, limón,
   botellas, tapas, agua), así que producir uno baja el stock disponible del
-  otro; el azúcar y la stevia solo afectan a su producto. Agregar otro producto
-  es agregar datos, no código. Las recetas se editan en **Ajustes → Configuración**.
+  otro; el azúcar, la stevia y las etiquetas solo afectan a su producto. Agregar
+  otro producto es agregar datos, no código. Las recetas se editan en
+  **Ajustes → Configuración**. Cada producto lleva su etiqueta (una por botella,
+  18 por lote; si cambias las botellas por lote, ajústala ahí): **Etiqueta te
+  normal** para el de azúcar morena y **Etiqueta te sin azucar** para el de
+  stevia. Se descuentan al producir y se compran en pedidos de 100.
 - **Hielo** (hecho en casa): se cuenta en charolas y no se compra, así que no
   tiene precio, no entra a la sugerencia de compra ni a las recetas. Solo
   importa si hay o no: sin hielo, el inicio muestra **Sin hielo · ponlo a
@@ -174,9 +184,9 @@ scripts/
 ```
 
 La app depende de la interfaz `AlmacenRepositorio`; la UI recibe el repositorio
-por props. La base de datos está en la **versión 3** (v2: productos con receta; v3: el
-hielo): al abrir una base antigua, Dexie migra el catálogo sin tocar el
-historial. Importar un respaldo sin hielo también lo agrega. Los
+por props. La base de datos está en la **versión 4** (v2: productos con receta; v3: el
+hielo; v4: las etiquetas): al abrir una base antigua, Dexie migra el catálogo sin tocar el
+historial. Importar un respaldo sin hielo o sin etiquetas también los agrega. Los
 respaldos exportados son `version: 2`; los `version: 1` se siguen pudiendo
 importar y se migran al leerlos.
 
