@@ -15,7 +15,7 @@ const [morena, stevia] = PRODUCTOS_SEMILLA;
 describe('calcularDescuentos', () => {
   it('morena 2 lotes descuenta su receta y no toca stevia', () => {
     expect(calcularDescuentos(morena, CATALOGO_SEMILLA, 2)).toEqual({
-      te: 300, azucar: 1600, limon: 44, pet: 36, tapa: 36, agua: 19,
+      te: 300, azucar: 1600, limon: 44, pet: 36, tapa: 36, agua: 19, 'etiqueta-normal': 36,
     });
   });
 

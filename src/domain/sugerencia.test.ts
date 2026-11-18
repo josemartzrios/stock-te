@@ -3,7 +3,10 @@ import { CATALOGO_SEMILLA, PRODUCTOS_SEMILLA } from './seed';
 import { calcularSugerencia } from './sugerencia';
 
 // Stock real del negocio en la carga inicial; stevia aun no se compra.
-const A = { te: 100, azucar: 1792, limon: 795, pet: 35, tapa: 35, agua: 190, stevia: 0 };
+const A = {
+  te: 100, azucar: 1792, limon: 795, pet: 35, tapa: 35, agua: 190, stevia: 0,
+  'etiqueta-normal': 1000, 'etiqueta-sin-azucar': 1000,
+};
 
 describe('calcularSugerencia (mezcla 3 + 3)', () => {
   const sug = calcularSugerencia(CATALOGO_SEMILLA, PRODUCTOS_SEMILLA, A);

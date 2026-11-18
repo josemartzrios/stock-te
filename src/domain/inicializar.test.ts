@@ -3,11 +3,11 @@ import { crearRepositorioMemoria } from '../testing/repositorioMemoria';
 import { inicializarAlmacen } from './inicializar';
 
 describe('inicializarAlmacen', () => {
-  it('repo vacio => 8 insumos, 2 productos, 0 movimientos', async () => {
+  it('repo vacio => 10 insumos, 2 productos, 0 movimientos', async () => {
     const repo = crearRepositorioMemoria();
     await inicializarAlmacen(repo);
     const d = await repo.leerTodo();
-    expect(d.insumos).toHaveLength(8);
+    expect(d.insumos).toHaveLength(10);
     expect(d.productos).toHaveLength(2);
     expect(d.movimientos).toHaveLength(0);
   });
@@ -19,7 +19,7 @@ describe('inicializarAlmacen', () => {
     await repo.guardarInsumo({ ...insumos[0], presentacionPrecio: 999 });
     await inicializarAlmacen(repo);
     const d = await repo.leerTodo();
-    expect(d.insumos).toHaveLength(8);
+    expect(d.insumos).toHaveLength(10);
     expect(d.insumos[0].presentacionPrecio).toBe(999);
   });
 });
@@ -31,7 +31,7 @@ describe('inicializarAlmacen: no destruye el historial', () => {
     await inicializarAlmacen(repo);
     const d = await repo.leerTodo();
     expect(d.movimientos).toEqual([movimiento]);
-    expect(d.insumos).toHaveLength(8);
+    expect(d.insumos).toHaveLength(10);
     expect(d.productos).toHaveLength(2);
   });
 });

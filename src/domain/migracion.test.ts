@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { CATALOGO_SEMILLA, PRODUCTOS_SEMILLA } from './seed';
+import { CATALOGO_SEMILLA } from './seed';
 import { migrarInsumosV1, type InsumoV1 } from './migracion';
 import { calcularStocks } from './stock';
-import { reg } from './testHelpers';
+import { catalogoSinEtiquetas, productosSinEtiquetas, reg } from './testHelpers';
 
 const CONSUMO_V1: Record<string, number> = { te: 150, azucar: 800, limon: 22, pet: 18, tapa: 18, agua: 9.5 };
 
 function insumosV1(editar: Record<string, number> = {}): InsumoV1[] {
-  return CATALOGO_SEMILLA.filter((i) => i.id !== 'stevia' && i.id !== 'hielo').map((i) => ({
+  return catalogoSinEtiquetas().filter((i) => i.id !== 'stevia' && i.id !== 'hielo').map((i) => ({
     ...i,
     consumoPorLote: editar[i.id] ?? CONSUMO_V1[i.id],
   }));
@@ -17,8 +17,8 @@ describe('migrarInsumosV1', () => {
   it('morena y stevia salen con las recetas semilla', () => {
     const { productos } = migrarInsumosV1(insumosV1());
     expect(productos.map((p) => p.id)).toEqual(['morena', 'stevia']);
-    expect(productos[0].receta).toEqual(PRODUCTOS_SEMILLA[0].receta);
-    expect(productos[1].receta).toEqual(PRODUCTOS_SEMILLA[1].receta);
+    expect(productos[0].receta).toEqual(productosSinEtiquetas()[0].receta);
+    expect(productos[1].receta).toEqual(productosSinEtiquetas()[1].receta);
     expect(productos.every((p) => p.objetivoLotes === 3 && p.activo)).toBe(true);
   });
 

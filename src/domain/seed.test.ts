@@ -11,11 +11,15 @@ describe('semilla de productos', () => {
   });
 
   it('receta de morena', () => {
-    expect(porId.morena.receta).toEqual({ te: 150, azucar: 800, limon: 22, pet: 18, tapa: 18, agua: 9.5 });
+    expect(porId.morena.receta).toEqual({
+      te: 150, azucar: 800, limon: 22, pet: 18, tapa: 18, agua: 9.5, 'etiqueta-normal': 18,
+    });
   });
 
   it('receta de stevia', () => {
-    expect(porId.stevia.receta).toEqual({ te: 150, stevia: 30, limon: 22, pet: 18, tapa: 18, agua: 10 });
+    expect(porId.stevia.receta).toEqual({
+      te: 150, stevia: 30, limon: 22, pet: 18, tapa: 18, agua: 10, 'etiqueta-sin-azucar': 18,
+    });
   });
 
   it('todo insumo de cada receta existe en el catalogo', () => {

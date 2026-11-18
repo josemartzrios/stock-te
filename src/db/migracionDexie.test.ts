@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import Dexie from 'dexie';
 import { describe, it, expect } from 'vitest';
 import { calcularStocks } from '../domain/stock';
-import { CATALOGO_SEMILLA } from '../domain/seed';
+import { catalogoSinEtiquetas } from '../domain/testHelpers';
 import type { MovimientoRegistro } from '../domain';
 import { crearAlmacenDB } from './esquema';
 import { crearRepositorioDexie } from './repositorioDexie';
@@ -21,7 +21,7 @@ describe('upgrade de Dexie v1 -> v2', () => {
     const v1 = new Dexie(nombre);
     v1.version(1).stores({ insumos: 'id, activo', movimientos: 'id, timestamp', config: 'key' });
     await v1.table('insumos').bulkAdd(
-      CATALOGO_SEMILLA.filter((i) => i.id !== 'stevia' && i.id !== 'hielo').map((i) => ({ ...i, consumoPorLote: CONSUMO[i.id] })),
+      catalogoSinEtiquetas().filter((i) => i.id !== 'stevia' && i.id !== 'hielo').map((i) => ({ ...i, consumoPorLote: CONSUMO[i.id] })),
     );
     await v1.table('movimientos').bulkAdd(movimientos);
     await v1.table('config').put({ key: 'capacidadObjetivo', value: 6 });
@@ -51,7 +51,7 @@ describe('upgrade de Dexie v2 -> v3', () => {
   it('agrega el hielo sin tocar el resto ni el log', async () => {
     const nombre = 'migracion-v2';
     const db2 = v2(nombre);
-    const sinHielo = CATALOGO_SEMILLA.filter((i) => i.id !== 'hielo').map((i) =>
+    const sinHielo = catalogoSinEtiquetas().filter((i) => i.id !== 'hielo').map((i) =>
       i.id === 'te' ? { ...i, presentacionPrecio: 999 } : i,
     );
     await db2.table('insumos').bulkAdd(sinHielo);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CATALOGO_SEMILLA, PRODUCTOS_SEMILLA } from './seed';
 import { crearRespaldo, parsearRespaldo } from './respaldo';
-import { reg } from './testHelpers';
+import { catalogoSinEtiquetas, reg } from './testHelpers';
 import type { Datos } from './types';
 
 const MENSAJE = 'El archivo no es un respaldo valido de Almacen Te.';
@@ -25,7 +25,7 @@ describe('respaldo v2', () => {
 
 describe('respaldo v1', () => {
   it('se migra: mismos movimientos, productos nuevos, sin consumoPorLote', () => {
-    const insumosV1 = CATALOGO_SEMILLA.filter((i) => i.id !== 'stevia' && i.id !== 'hielo').map((i) => ({ ...i, consumoPorLote: 100 }));
+    const insumosV1 = catalogoSinEtiquetas().filter((i) => i.id !== 'stevia' && i.id !== 'hielo').map((i) => ({ ...i, consumoPorLote: 100 }));
     const movs = [reg({ tipo: 'produccion', lotes: 2, descuentos: { te: 300 } })];
     const parsed = parsearRespaldo({
       formato: 'almacen-te', version: 1, exportado: 'x', insumos: insumosV1, movimientos: movs,

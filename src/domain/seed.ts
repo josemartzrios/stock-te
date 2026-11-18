@@ -13,6 +13,39 @@ export const HIELO: Insumo = {
   hechoEnCasa: true,
 };
 
+/** Una etiqueta por botella, igual que PET y tapa. */
+export const ETIQUETA_POR_LOTE = 18;
+
+/** Etiqueta del te con azucar morena ("normal"). */
+export const ETIQUETA_NORMAL: Insumo = {
+  id: 'etiqueta-normal',
+  nombre: 'Etiqueta te normal',
+  unidadBase: 'pza',
+  presentacionNombre: 'pedido 100 pzas',
+  presentacionCantidad: 100,
+  presentacionPrecio: 80,
+  umbralLotes: 2,
+  activo: true,
+};
+
+/** Etiqueta del te con stevia ("sin azucar"). */
+export const ETIQUETA_SIN_AZUCAR: Insumo = {
+  id: 'etiqueta-sin-azucar',
+  nombre: 'Etiqueta te sin azucar',
+  unidadBase: 'pza',
+  presentacionNombre: 'pedido 100 pzas',
+  presentacionCantidad: 100,
+  presentacionPrecio: 80,
+  umbralLotes: 2,
+  activo: true,
+};
+
+/** Etiqueta que lleva cada producto (productoId -> insumo). Lo usan las migraciones. */
+export const ETIQUETAS_PRODUCTO: Record<string, Insumo> = {
+  morena: ETIQUETA_NORMAL,
+  stevia: ETIQUETA_SIN_AZUCAR,
+};
+
 /**
  * Catalogo inicial real del negocio. Se siembra en el primer arranque.
  * El stock arranca en CERO eventos: el primer uso real es un conteo fisico.
@@ -88,6 +121,8 @@ export const CATALOGO_SEMILLA: Insumo[] = [
     umbralLotes: 2,
     activo: true,
   },
+  ETIQUETA_NORMAL,
+  ETIQUETA_SIN_AZUCAR,
   HIELO,
 ];
 
@@ -96,14 +131,14 @@ export const PRODUCTOS_SEMILLA: Producto[] = [
   {
     id: 'morena',
     nombre: 'Te con azucar morena',
-    receta: { te: 150, azucar: 800, limon: 22, pet: 18, tapa: 18, agua: 9.5 },
+    receta: { te: 150, azucar: 800, limon: 22, pet: 18, tapa: 18, agua: 9.5, 'etiqueta-normal': ETIQUETA_POR_LOTE },
     objetivoLotes: 3,
     activo: true,
   },
   {
     id: 'stevia',
     nombre: 'Te con stevia',
-    receta: { te: 150, stevia: 30, limon: 22, pet: 18, tapa: 18, agua: 10 },
+    receta: { te: 150, stevia: 30, limon: 22, pet: 18, tapa: 18, agua: 10, 'etiqueta-sin-azucar': ETIQUETA_POR_LOTE },
     objetivoLotes: 3,
     activo: true,
   },

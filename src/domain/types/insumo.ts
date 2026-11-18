@@ -1,6 +1,6 @@
 /** Catalogo: configuracion editable. NO es un evento. */
 export interface Insumo {
-  id: string; // 'te' | 'azucar' | 'stevia' | 'limon' | 'pet' | 'tapa' | 'agua' | 'hielo'
+  id: string; // 'te' | 'azucar' | 'stevia' | 'limon' | 'pet' | 'tapa' | 'agua' | 'etiqueta-normal' | 'etiqueta-sin-azucar' | 'hielo'
   nombre: string;
   unidadBase: string; // unidad en que se mide el stock: 'g' | 'ml' | 'pza' | 'L' | 'charolas'
   // Presentacion de compra (en que unidades se compra):

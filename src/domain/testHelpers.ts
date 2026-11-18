@@ -1,4 +1,20 @@
-import type { MovimientoRegistro } from './types';
+import { CATALOGO_SEMILLA, ETIQUETAS_PRODUCTO, PRODUCTOS_SEMILLA } from './seed';
+import type { Insumo, MovimientoRegistro, Producto } from './types';
+
+const IDS_ETIQUETA = Object.values(ETIQUETAS_PRODUCTO).map((e) => e.id);
+
+/** Catalogo de antes de las etiquetas (v3): copias de la semilla sin los insumos de etiqueta. */
+export function catalogoSinEtiquetas(): Insumo[] {
+  return CATALOGO_SEMILLA.filter((i) => !IDS_ETIQUETA.includes(i.id)).map((i) => ({ ...i }));
+}
+
+/** Productos de antes de las etiquetas: copias con recetas nuevas, sin las claves de etiqueta. */
+export function productosSinEtiquetas(): Producto[] {
+  return PRODUCTOS_SEMILLA.map((p) => ({
+    ...p,
+    receta: Object.fromEntries(Object.entries(p.receta).filter(([id]) => !IDS_ETIQUETA.includes(id))),
+  }));
+}
 
 let contador = 0;
 /** Crea un registro con timestamp creciente para forzar orden cronologico. */

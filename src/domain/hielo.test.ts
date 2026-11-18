@@ -33,7 +33,10 @@ describe('insumo hielo', () => {
   });
 
   it('no afecta los lotes de los productos', () => {
-    const stocks = { te: 1000, azucar: 5000, stevia: 300, limon: 1000, pet: 100, tapa: 100, agua: 100 };
+    const stocks = {
+      te: 1000, azucar: 5000, stevia: 300, limon: 1000, pet: 100, tapa: 100, agua: 100,
+      'etiqueta-normal': 1000, 'etiqueta-sin-azucar': 1000,
+    };
     const con = calcularEstadoProductos(CATALOGO_SEMILLA, PRODUCTOS_SEMILLA, { ...stocks, hielo: 0 });
     const sin = calcularEstadoProductos(SIN_HIELO, PRODUCTOS_SEMILLA, stocks);
     expect(con.map((p) => p.lotes)).toEqual(sin.map((p) => p.lotes));

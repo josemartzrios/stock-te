@@ -8,8 +8,9 @@ import {
   lotesRestantes,
 } from './estadoProducto';
 
-const A = { te: 100, azucar: 1792, limon: 795, pet: 35, tapa: 35, agua: 190, stevia: 0 };
-const B = { te: 1000, stevia: 100, limon: 1000, pet: 100, tapa: 100, agua: 200 };
+const ETIQUETAS = { 'etiqueta-normal': 1000, 'etiqueta-sin-azucar': 1000 };
+const A = { te: 100, azucar: 1792, limon: 795, pet: 35, tapa: 35, agua: 190, stevia: 0, ...ETIQUETAS };
+const B = { te: 1000, stevia: 100, limon: 1000, pet: 100, tapa: 100, agua: 200, ...ETIQUETAS };
 
 describe('lotesRestantes / colorSemaforo', () => {
   it('floor del stock entre el consumo; negativo => 0 con bandera', () => {
